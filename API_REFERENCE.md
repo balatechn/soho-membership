@@ -3,7 +3,7 @@
 ## Base URL
 
 ```
-Production: https://soho-membership.vercel.app/api
+Production: https://junobo-membership.vercel.app/api
 Development: http://localhost:3000/api
 ```
 

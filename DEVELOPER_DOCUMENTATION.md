@@ -119,7 +119,7 @@ A comprehensive membership management system designed for Junobo Mumbai to:
 ## 📁 Folder Structure
 
 ```
-soho-membership/
+junobo-membership/
 ├── prisma/
 │   └── schema.prisma              # Database schema definition
 │
@@ -698,8 +698,8 @@ EMAIL_FROM="noreply@junobo.com"
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/balatechn/soho-membership.git
-cd soho-membership
+git clone https://github.com/balatechn/junobo-membership.git
+cd junobo-membership
 
 # 2. Install dependencies
 npm install

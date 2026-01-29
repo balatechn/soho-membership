@@ -74,8 +74,8 @@ A comprehensive membership management system built with Next.js for Junobo Mumba
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/soho-membership.git
-cd soho-membership
+git clone https://github.com/yourusername/junobo-membership.git
+cd junobo-membership
 ```
 
 2. Install dependencies:
