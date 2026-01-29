@@ -5,34 +5,31 @@ import { prisma } from "@/lib/prisma"
 import * as XLSX from "xlsx"
 import { parseExcelDate, getUploadMonth, isMaharashtra } from "@/lib/utils"
 
-interface ExcelRow {
-  "Invoice No"?: string
-  "Invoice Date"?: string | number | Date
-  "Global ID"?: string
-  "Name"?: string
-  "Pin Code"?: string
-  "State"?: string
-  "Email ID"?: string
-  "Registration"?: string
-  "Membership"?: number
-  "Membership Total"?: number
-  "CGST – 9%"?: number
-  "SGST – 9%"?: number
-  "IGST – 18%"?: number
-  "Total Tax"?: number
-  "Total Amount"?: number
-  "Description 1"?: string
-  "Description"?: string
-  "Membership Start Date"?: string | number | Date
-  "Membership End Date"?: string | number | Date
-  "Payment Start Date"?: string | number | Date
-  "Payment End Date"?: string | number | Date
-  "Type"?: string
-  "Renewal / Quarterly"?: string
-  "Month"?: string
-  "Product"?: string
-  "Months (Tenure)"?: number
-  "Calculation of Month"?: number
+// Helper function to normalize header names for flexible matching
+function normalizeHeader(header: string): string {
+  return header
+    .toLowerCase()
+    .replace(/[.\-–_]/g, ' ')  // Replace dots, dashes, underscores with space
+    .replace(/\s+/g, ' ')       // Collapse multiple spaces
+    .trim()
+}
+
+// Map to find the actual column name from the Excel row
+function getColumnValue(row: Record<string, unknown>, possibleNames: string[]): unknown {
+  for (const name of possibleNames) {
+    if (row[name] !== undefined) return row[name]
+  }
+  // Try normalized matching
+  const rowKeys = Object.keys(row)
+  for (const key of rowKeys) {
+    const normalizedKey = normalizeHeader(key)
+    for (const name of possibleNames) {
+      if (normalizeHeader(name) === normalizedKey) {
+        return row[key]
+      }
+    }
+  }
+  return undefined
 }
 
 interface ValidationError {
@@ -99,7 +96,7 @@ export async function POST(request: NextRequest) {
     const workbook = XLSX.read(buffer, { type: "array" })
     const sheetName = workbook.SheetNames[0]
     const worksheet = workbook.Sheets[sheetName]
-    const data = XLSX.utils.sheet_to_json<ExcelRow>(worksheet)
+    const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet)
 
     if (data.length === 0) {
       return NextResponse.json({ error: "Excel file is empty" }, { status: 400 })
@@ -119,32 +116,65 @@ export async function POST(request: NextRequest) {
     // Track duplicates within this upload
     const uploadInvoiceNos = new Set<string>()
 
+    // Column name mappings - supports multiple variations
+    const COLUMNS = {
+      invoiceNo: ["Invoice No.", "Invoice No", "Invoice Number", "Inv No"],
+      invoiceDate: ["Invoice Date", "Inv Date", "Date"],
+      globalId: ["Global ID", "GlobalID", "Global Id", "Member ID"],
+      name: ["Name", "Member Name", "Full Name"],
+      state: ["State", "State Name"],
+      email: ["Email Id", "Email ID", "Email", "E-mail"],
+      registration: ["Registration", "Reg No", "Registration No"],
+      membership: ["Membership", "Membership Type"],
+      monthTotal: ["Month Total", "Monthly Total", "Total Amount", "Total"],
+      cgst9: ["CGST 9%", "CGST – 9%", "CGST-9%", "CGST 9", "CGST"],
+      sgst9: ["SGST 9%", "SGST – 9%", "SGST-9%", "SGST 9", "SGST"],
+      cgst18: ["CGST 18%", "CGST – 18%", "CGST-18%", "CGST 18", "IGST – 18%", "IGST 18%"],
+      sgst18: ["SGST 18%", "SGST – 18%", "SGST-18%", "SGST 18"],
+      totalTax: ["Total Tax", "Tax Total", "Tax Amount"],
+      description: ["Description", "Description 1", "Desc"],
+      membershipStartDate: ["Membership Start Date", "Start Date", "Member Start"],
+      membershipEndDate: ["Membership End Date", "End Date", "Member End"],
+      paymentStartDate: ["Payment Start Date", "Pay Start Date"],
+      paymentEndDate: ["Payment End Date", "Pay End Date"],
+      renewalType: ["Renewal/Quarterly", "Renewal / Quarterly", "Renewal", "Type"],
+      product: ["Product", "Product Name", "Product Type"],
+      months: ["Months", "Months (Tenure)", "Tenure", "Duration"],
+      calculationMonth: ["Calculations of Month", "Calculation of Month", "Calc Month"],
+    }
+
     for (let i = 0; i < data.length; i++) {
       const row = data[i]
       const rowNum = i + 2 // Excel rows are 1-indexed, plus header
 
+      // Get values using flexible column matching
+      const invoiceNoVal = getColumnValue(row, COLUMNS.invoiceNo)
+      const globalIdVal = getColumnValue(row, COLUMNS.globalId)
+      const invoiceDateVal = getColumnValue(row, COLUMNS.invoiceDate)
+      const monthTotalVal = getColumnValue(row, COLUMNS.monthTotal)
+
       // Validate mandatory fields
-      if (!row["Invoice No"]) {
+      if (!invoiceNoVal) {
         errors.push({ row: rowNum, field: "Invoice No", message: "Invoice No is required" })
         continue
       }
 
-      if (!row["Global ID"]) {
+      if (!globalIdVal) {
         errors.push({ row: rowNum, field: "Global ID", message: "Global ID is required" })
         continue
       }
 
-      if (!row["Invoice Date"]) {
+      if (!invoiceDateVal) {
         errors.push({ row: rowNum, field: "Invoice Date", message: "Invoice Date is required" })
         continue
       }
 
-      if (!row["Total Amount"] && row["Total Amount"] !== 0) {
-        errors.push({ row: rowNum, field: "Total Amount", message: "Total Amount is required" })
+      if (!monthTotalVal && monthTotalVal !== 0) {
+        errors.push({ row: rowNum, field: "Month Total", message: "Month Total is required" })
         continue
       }
 
-      const invoiceNo = row["Invoice No"].toString()
+      const invoiceNo = String(invoiceNoVal)
 
       // Check for duplicates in database
       if (existingInvoiceNos.has(invoiceNo)) {
@@ -160,14 +190,21 @@ export async function POST(request: NextRequest) {
 
       uploadInvoiceNos.add(invoiceNo)
 
-      const invoiceDate = parseExcelDate(row["Invoice Date"])
+      const invoiceDate = parseExcelDate(invoiceDateVal as string | number | Date | null | undefined)
       if (!invoiceDate) {
         errors.push({ row: rowNum, field: "Invoice Date", message: "Invalid Invoice Date format" })
         continue
       }
 
+      // Get all other values
+      const cgst9 = Number(getColumnValue(row, COLUMNS.cgst9)) || 0
+      const sgst9 = Number(getColumnValue(row, COLUMNS.sgst9)) || 0
+      const cgst18 = Number(getColumnValue(row, COLUMNS.cgst18)) || 0
+      const sgst18 = Number(getColumnValue(row, COLUMNS.sgst18)) || 0
+      const monthsVal = getColumnValue(row, COLUMNS.months)
+      const monthsTenure = monthsVal ? Number(monthsVal) : null
+
       // Determine billing cycle
-      const monthsTenure = row["Months (Tenure)"] || row["Calculation of Month"] || null
       let billingCycle = null
       if (monthsTenure) {
         billingCycle = monthsTenure >= 12 ? "Annual" : "Quarterly"
@@ -177,31 +214,31 @@ export async function POST(request: NextRequest) {
       processedInvoices.push({
         invoiceNo,
         invoiceDate,
-        globalId: row["Global ID"].toString(),
-        name: row["Name"] || "",
-        pinCode: row["Pin Code"]?.toString() || null,
-        state: row["State"] || null,
-        email: row["Email ID"] || null,
-        registration: row["Registration"] || null,
-        membership: row["Membership"] || 0,
-        membershipTotal: row["Membership Total"] || 0,
-        cgst: row["CGST – 9%"] || 0,
-        sgst: row["SGST – 9%"] || 0,
-        igst: row["IGST – 18%"] || 0,
-        totalTax: row["Total Tax"] || 0,
-        totalAmount: row["Total Amount"] || 0,
-        description1: row["Description 1"] || null,
-        description: row["Description"] || null,
-        membershipStartDate: parseExcelDate(row["Membership Start Date"]),
-        membershipEndDate: parseExcelDate(row["Membership End Date"]),
-        paymentStartDate: parseExcelDate(row["Payment Start Date"]),
-        paymentEndDate: parseExcelDate(row["Payment End Date"]),
-        type: row["Type"] || null,
-        renewalType: row["Renewal / Quarterly"] || null,
-        month: row["Month"] || null,
-        product: row["Product"] || null,
-        monthsTenure: monthsTenure as number | null,
-        calculationMonth: row["Calculation of Month"] || null,
+        globalId: String(globalIdVal),
+        name: String(getColumnValue(row, COLUMNS.name) || ""),
+        pinCode: null,
+        state: String(getColumnValue(row, COLUMNS.state) || "") || null,
+        email: String(getColumnValue(row, COLUMNS.email) || "") || null,
+        registration: String(getColumnValue(row, COLUMNS.registration) || "") || null,
+        membership: Number(getColumnValue(row, COLUMNS.membership)) || 0,
+        membershipTotal: Number(monthTotalVal) || 0,
+        cgst: cgst9 + cgst18,
+        sgst: sgst9 + sgst18,
+        igst: cgst18 + sgst18, // For interstate
+        totalTax: Number(getColumnValue(row, COLUMNS.totalTax)) || (cgst9 + sgst9 + cgst18 + sgst18),
+        totalAmount: Number(monthTotalVal) || 0,
+        description1: null,
+        description: String(getColumnValue(row, COLUMNS.description) || "") || null,
+        membershipStartDate: parseExcelDate(getColumnValue(row, COLUMNS.membershipStartDate) as string | number | Date | null | undefined),
+        membershipEndDate: parseExcelDate(getColumnValue(row, COLUMNS.membershipEndDate) as string | number | Date | null | undefined),
+        paymentStartDate: parseExcelDate(getColumnValue(row, COLUMNS.paymentStartDate) as string | number | Date | null | undefined),
+        paymentEndDate: parseExcelDate(getColumnValue(row, COLUMNS.paymentEndDate) as string | number | Date | null | undefined),
+        type: null,
+        renewalType: String(getColumnValue(row, COLUMNS.renewalType) || "") || null,
+        month: String(getColumnValue(row, COLUMNS.calculationMonth) || "") || null,
+        product: String(getColumnValue(row, COLUMNS.product) || "") || null,
+        monthsTenure,
+        calculationMonth: null,
         billingCycle,
       })
     }
