@@ -46,10 +46,18 @@ export default function ReportsPage() {
       }
 
       const response = await fetch(`/api/reports?${params}`)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to load report")
+      }
+      
       const data = await response.json()
       setReportData(data)
-    } catch (error) {
-      toast.error("Failed to load report")
+    } catch (error: any) {
+      console.error("Report fetch error:", error)
+      toast.error(error.message || "Failed to load report")
+      setReportData(null)
     } finally {
       setLoading(false)
     }
@@ -276,26 +284,29 @@ export default function ReportsPage() {
                 <div className="space-y-6">
                   <div className="grid grid-cols-5 gap-4">
                     <div className="bg-green-50 p-4 rounded-lg text-center">
-                      <p className="text-2xl font-bold text-green-900">{reportData.data.totals.active}</p>
+                      <p className="text-2xl font-bold text-green-900">{reportData.data.totals?.active || 0}</p>
                       <p className="text-sm text-green-600">Active</p>
                     </div>
                     <div className="bg-red-50 p-4 rounded-lg text-center">
-                      <p className="text-2xl font-bold text-red-900">{reportData.data.totals.expired}</p>
+                      <p className="text-2xl font-bold text-red-900">{reportData.data.totals?.expired || 0}</p>
                       <p className="text-sm text-red-600">Expired</p>
                     </div>
                     <div className="bg-blue-50 p-4 rounded-lg text-center">
-                      <p className="text-2xl font-bold text-blue-900">{reportData.data.totals.renewed}</p>
+                      <p className="text-2xl font-bold text-blue-900">{reportData.data.totals?.renewed || 0}</p>
                       <p className="text-sm text-blue-600">Renewed</p>
                     </div>
                     <div className="bg-amber-50 p-4 rounded-lg text-center">
-                      <p className="text-2xl font-bold text-amber-900">{reportData.data.totals.quarterly}</p>
+                      <p className="text-2xl font-bold text-amber-900">{reportData.data.totals?.quarterly || 0}</p>
                       <p className="text-sm text-amber-600">Quarterly</p>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg text-center">
-                      <p className="text-2xl font-bold text-gray-900">{reportData.data.totals.frozen}</p>
+                      <p className="text-2xl font-bold text-gray-900">{reportData.data.totals?.frozen || 0}</p>
                       <p className="text-sm text-gray-600">Frozen</p>
                     </div>
                   </div>
+                  {(!reportData.data.byStatus || reportData.data.byStatus.length === 0) && (
+                    <p className="text-gray-500 text-center py-4">No member data available. Upload invoices to see member statistics.</p>
+                  )}
                 </div>
               )}
 
@@ -304,24 +315,24 @@ export default function ReportsPage() {
                 <div className="space-y-6">
                   <div className="grid grid-cols-4 gap-4">
                     <div className="bg-red-50 p-4 rounded-lg text-center">
-                      <p className="text-3xl font-bold text-red-900">{reportData.data.next30Days.count}</p>
+                      <p className="text-3xl font-bold text-red-900">{reportData.data.next30Days?.count || 0}</p>
                       <p className="text-sm text-red-600">Next 30 Days</p>
                     </div>
                     <div className="bg-amber-50 p-4 rounded-lg text-center">
-                      <p className="text-3xl font-bold text-amber-900">{reportData.data.next60Days.count}</p>
+                      <p className="text-3xl font-bold text-amber-900">{reportData.data.next60Days?.count || 0}</p>
                       <p className="text-sm text-amber-600">30-60 Days</p>
                     </div>
                     <div className="bg-yellow-50 p-4 rounded-lg text-center">
-                      <p className="text-3xl font-bold text-yellow-900">{reportData.data.next90Days.count}</p>
+                      <p className="text-3xl font-bold text-yellow-900">{reportData.data.next90Days?.count || 0}</p>
                       <p className="text-sm text-yellow-600">60-90 Days</p>
                     </div>
                     <div className="bg-blue-50 p-4 rounded-lg text-center">
-                      <p className="text-3xl font-bold text-blue-900">{reportData.data.total}</p>
+                      <p className="text-3xl font-bold text-blue-900">{reportData.data.total || 0}</p>
                       <p className="text-sm text-blue-600">Total</p>
                     </div>
                   </div>
 
-                  {reportData.data.next30Days.members.length > 0 && (
+                  {reportData.data.next30Days?.members?.length > 0 ? (
                     <div>
                       <h3 className="font-medium text-gray-900 mb-3">Members Expiring in Next 30 Days</h3>
                       <div className="overflow-x-auto">
@@ -349,6 +360,8 @@ export default function ReportsPage() {
                         </table>
                       </div>
                     </div>
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">No upcoming renewals in the next 90 days.</p>
                   )}
                 </div>
               )}
