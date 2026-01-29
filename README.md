@@ -1,6 +1,6 @@
-# Soho House Mumbai - Membership & Revenue Management App
+# Junobo Mumbai - Membership & Revenue Management App
 
-A comprehensive membership management system built with Next.js for Soho House Mumbai to manage member invoices, track revenue, and generate reports.
+A comprehensive membership management system built with Next.js for Junobo Mumbai to manage member invoices, track revenue, and generate reports.
 
 ## Features
 
@@ -173,8 +173,8 @@ The system expects Excel files with the following columns:
 
 ## License
 
-Private - Soho House Mumbai
+Private - Junobo Mumbai
 
 ## Support
 
-For support, contact the IT team at Soho House Mumbai.
+For support, contact the IT team at Junobo Mumbai.

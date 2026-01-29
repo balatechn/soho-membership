@@ -1,4 +1,4 @@
-# AI Prompt - Soho House Membership Invoice & Revenue Management System
+# AI Prompt - Junobo Membership Invoice & Revenue Management System
 
 Use this prompt to instruct an AI assistant to build the complete Membership Invoice & Revenue Management application.
 
@@ -7,7 +7,7 @@ Use this prompt to instruct an AI assistant to build the complete Membership Inv
 ## 🤖 Master Prompt
 
 ```
-Build a comprehensive Membership Invoice & Revenue Management System for a private members club (Soho House Mumbai) with the following specifications:
+Build a comprehensive Membership Invoice & Revenue Management System for a private members club (Junobo Mumbai) with the following specifications:
 
 ## Project Overview
 Create a full-stack web application to:
@@ -38,7 +38,7 @@ Create a full-stack web application to:
 
 ### Member Table
 - id (string, primary key, cuid)
-- globalId (string, unique) - Member ID from Soho House
+- globalId (string, unique) - Member ID from Junobo
 - name (string)
 - email (string, optional)
 - pinCode, state (string, optional)

@@ -64,7 +64,7 @@ export function Sidebar() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-center h-16 px-4 bg-gray-800">
-            <h1 className="text-xl font-bold text-white">Soho House</h1>
+            <h1 className="text-xl font-bold text-white">Junobo</h1>
           </div>
 
           {/* Navigation */}

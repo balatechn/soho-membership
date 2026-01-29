@@ -1,4 +1,4 @@
-# Soho House Mumbai - Membership Invoice & Revenue Management System
+# Junobo Mumbai - Membership Invoice & Revenue Management System
 
 ## Complete Developer Documentation
 
@@ -23,7 +23,7 @@
 ## 🎯 Project Overview
 
 ### Purpose
-A comprehensive membership management system designed for Soho House Mumbai to:
+A comprehensive membership management system designed for Junobo Mumbai to:
 - Track member invoices and payments
 - Generate revenue reports and analytics
 - Manage member lifecycle (active, expired, renewed)
@@ -252,10 +252,10 @@ model User {
   auditLogs     AuditLog[]
 }
 
-// Member - Soho House members
+// Member - Junobo members
 model Member {
   id                  String    @id @default(cuid())
-  globalId            String    @unique  // Soho House member ID
+  globalId            String    @unique  // Junobo member ID
   name                String
   email               String?
   pinCode             String?
@@ -868,4 +868,4 @@ For questions or issues:
 
 **Version:** 1.0.0  
 **Last Updated:** January 29, 2026  
-**Author:** Soho House Mumbai Development Team
+**Author:** Junobo Mumbai Development Team

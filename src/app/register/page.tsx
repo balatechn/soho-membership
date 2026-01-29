@@ -69,7 +69,7 @@ export default function RegisterPage() {
               <Building2 className="w-8 h-8 text-amber-600" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
-            <p className="text-gray-500 mt-1">Join Soho House Membership System</p>
+            <p className="text-gray-500 mt-1">Join Junobo Membership System</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">

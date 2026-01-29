@@ -1,4 +1,4 @@
-# System Architecture - Soho House Membership Management
+# System Architecture - Junobo Membership Management
 
 ## High-Level Architecture
 

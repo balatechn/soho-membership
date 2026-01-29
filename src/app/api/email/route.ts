@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: #1a1a2e; color: white; padding: 20px; text-align: center;">
-          <h1 style="margin: 0;">Soho House Mumbai</h1>
+          <h1 style="margin: 0;">Junobo Mumbai</h1>
           <p style="margin: 5px 0 0;">Membership Revenue Report</p>
         </div>
         
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
         
         <div style="background: #1a1a2e; color: #999; padding: 15px; text-align: center; font-size: 12px;">
           <p style="margin: 0;">
-            This is an automated email from Soho House Mumbai Membership Management System.
+            This is an automated email from Junobo Mumbai Membership Management System.
           </p>
           <p style="margin: 5px 0 0;">
             Generated on ${format(new Date(), "PPpp")}
@@ -153,9 +153,9 @@ export async function POST(request: NextRequest) {
     // Send email
     try {
       await transporter.sendMail({
-        from: process.env.EMAIL_FROM || "Soho House Mumbai <noreply@sohohouse.com>",
+        from: process.env.EMAIL_FROM || "Junobo Mumbai <noreply@junobo.com>",
         to: recipients.join(", "),
-        subject: `Soho House Mumbai - Monthly Revenue Report (${monthName})`,
+        subject: `Junobo Mumbai - Monthly Revenue Report (${monthName})`,
         html: htmlContent,
         attachments,
       })

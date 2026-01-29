@@ -47,7 +47,7 @@ export default function LoginPage() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 mb-4">
               <Building2 className="w-8 h-8 text-amber-600" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Soho House Mumbai</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Junobo Mumbai</h1>
             <p className="text-gray-500 mt-1">Membership Management System</p>
           </div>
 
@@ -105,7 +105,7 @@ export default function LoginPage() {
         </div>
 
         <p className="mt-4 text-center text-xs text-gray-400">
-          © {new Date().getFullYear()} Soho House Mumbai. All rights reserved.
+          © {new Date().getFullYear()} Junobo Mumbai. All rights reserved.
         </p>
       </div>
     </div>

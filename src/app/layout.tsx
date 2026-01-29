@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Soho House Mumbai - Membership Management",
-  description: "Membership Invoice & Revenue Management System for Soho House Mumbai",
+  title: "Junobo Mumbai - Membership Management",
+  description: "Membership Invoice & Revenue Management System for Junobo Mumbai",
 };
 
 export default function RootLayout({

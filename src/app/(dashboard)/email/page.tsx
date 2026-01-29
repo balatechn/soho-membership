@@ -244,7 +244,7 @@ export default function EmailPage() {
               <div className="border-t pt-4">
                 <p className="text-sm text-gray-500 mb-2">Subject:</p>
                 <p className="font-medium text-gray-900">
-                  Soho House Mumbai - Monthly Revenue Report ({new Date(month + "-01").toLocaleDateString("en-IN", { month: "long", year: "numeric" })})
+                  Junobo Mumbai - Monthly Revenue Report ({new Date(month + "-01").toLocaleDateString("en-IN", { month: "long", year: "numeric" })})
                 </p>
               </div>
 

@@ -1,4 +1,4 @@
-# API Reference - Soho House Membership Management
+# API Reference - Junobo Membership Management
 
 ## Base URL
 
