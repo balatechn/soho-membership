@@ -42,7 +42,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
               tickFormatter={(value) => `₹${(value / 100000).toFixed(0)}L`}
             />
             <Tooltip 
-              formatter={(value: number) => [formatCurrency(value), "Revenue"]}
+              formatter={(value) => [formatCurrency(value as number), "Revenue"]}
               contentStyle={{ 
                 backgroundColor: "#1f2937", 
                 border: "none", 
@@ -85,7 +85,7 @@ export function ProductChart({ data }: ProductChartProps) {
               paddingAngle={5}
               dataKey="count"
               nameKey="product"
-              label={({ product, percent }) => `${product} (${(percent * 100).toFixed(0)}%)`}
+              label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
             >
               {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -129,7 +129,7 @@ export function QuarterlyChart({ data }: QuarterlyChartProps) {
               tickFormatter={(value) => `₹${(value / 100000).toFixed(0)}L`}
             />
             <Tooltip 
-              formatter={(value: number) => [formatCurrency(value), ""]}
+              formatter={(value) => [formatCurrency(value as number), ""]}
               contentStyle={{ 
                 backgroundColor: "#1f2937", 
                 border: "none", 
