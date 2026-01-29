@@ -46,8 +46,34 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="h-8 w-48 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-4 w-72 bg-gray-100 rounded animate-pulse mt-2"></div>
+          </div>
+        </div>
+        {/* Stats Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-8 w-32 bg-gray-200 rounded animate-pulse mt-3"></div>
+            </div>
+          ))}
+        </div>
+        {/* Charts Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-80">
+            <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-4"></div>
+            <div className="h-56 bg-gray-100 rounded animate-pulse"></div>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-80">
+            <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-4"></div>
+            <div className="h-56 bg-gray-100 rounded animate-pulse"></div>
+          </div>
+        </div>
       </div>
     )
   }

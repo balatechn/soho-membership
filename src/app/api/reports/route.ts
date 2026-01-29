@@ -425,61 +425,64 @@ async function getDashboardData() {
   const lastMonth = startOfMonth(subMonths(today, 1))
   const next30Days = addDays(today, 30)
 
-  // Current month revenue
-  const currentMonthRevenue = await prisma.invoice.aggregate({
-    where: {
-      invoiceDate: {
-        gte: currentMonth,
-        lte: today,
-      }
-    },
-    _sum: {
-      totalAmount: true,
-      totalTax: true,
-    },
-    _count: true,
-  })
-
-  // Last month revenue for comparison
-  const lastMonthRevenue = await prisma.invoice.aggregate({
-    where: {
-      invoiceDate: {
-        gte: lastMonth,
-        lt: currentMonth,
-      }
-    },
-    _sum: {
-      totalAmount: true,
-    },
-  })
-
-  // Member counts
-  const memberCounts = await prisma.member.groupBy({
-    by: ["status"],
-    _count: true,
-  })
-
-  // Upcoming renewals (next 30 days)
-  const upcomingRenewals = await prisma.member.count({
-    where: {
-      membershipEndDate: {
-        gte: today,
-        lte: next30Days,
+  // Run ALL queries in parallel for faster response
+  const [
+    currentMonthRevenue,
+    lastMonthRevenue,
+    memberCounts,
+    upcomingRenewals,
+    productDistribution,
+    ...monthlyTrendResults
+  ] = await Promise.all([
+    // Current month revenue
+    prisma.invoice.aggregate({
+      where: {
+        invoiceDate: {
+          gte: currentMonth,
+          lte: today,
+        }
       },
-      status: { not: "EXPIRED" }
-    }
-  })
-
-  // Product distribution
-  const productDistribution = await prisma.member.groupBy({
-    by: ["product"],
-    where: { status: "ACTIVE" },
-    _count: true,
-  })
-
-  // Monthly trend (last 6 months)
-  const monthlyTrend = await Promise.all(
-    Array.from({ length: 6 }, (_, i) => {
+      _sum: {
+        totalAmount: true,
+        totalTax: true,
+      },
+      _count: true,
+    }),
+    // Last month revenue for comparison
+    prisma.invoice.aggregate({
+      where: {
+        invoiceDate: {
+          gte: lastMonth,
+          lt: currentMonth,
+        }
+      },
+      _sum: {
+        totalAmount: true,
+      },
+    }),
+    // Member counts
+    prisma.member.groupBy({
+      by: ["status"],
+      _count: true,
+    }),
+    // Upcoming renewals (next 30 days)
+    prisma.member.count({
+      where: {
+        membershipEndDate: {
+          gte: today,
+          lte: next30Days,
+        },
+        status: { not: "EXPIRED" }
+      }
+    }),
+    // Product distribution
+    prisma.member.groupBy({
+      by: ["product"],
+      where: { status: "ACTIVE" },
+      _count: true,
+    }),
+    // Monthly trend (last 6 months) - all in parallel
+    ...Array.from({ length: 6 }, (_, i) => {
       const monthStart = startOfMonth(subMonths(today, i))
       const monthEnd = endOfMonth(monthStart)
       return prisma.invoice.aggregate({
@@ -492,12 +495,15 @@ async function getDashboardData() {
         _sum: {
           totalAmount: true,
         },
-      }).then(result => ({
-        month: format(monthStart, "MMM yyyy"),
-        revenue: result._sum.totalAmount || 0,
-      }))
+      })
     })
-  )
+  ])
+
+  // Process monthly trend
+  const monthlyTrend = monthlyTrendResults.map((result, i) => ({
+    month: format(startOfMonth(subMonths(today, i)), "MMM yyyy"),
+    revenue: result._sum.totalAmount || 0,
+  }))
 
   const activeMembers = memberCounts.find(m => m.status === "ACTIVE")?._count || 0
   const expiredMembers = memberCounts.find(m => m.status === "EXPIRED")?._count || 0
@@ -527,6 +533,10 @@ async function getDashboardData() {
         count: p._count,
       })),
       monthlyTrend: monthlyTrend.reverse(),
+    }
+  }, {
+    headers: {
+      'Cache-Control': 'private, max-age=30', // Cache for 30 seconds
     }
   })
 }
