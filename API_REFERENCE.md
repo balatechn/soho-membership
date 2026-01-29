@@ -59,7 +59,7 @@ Get current user session.
 {
   "user": {
     "id": "clxyz123456789",
-    "email": "admin@sohohouse.com",
+    "email": "admin@junobo.com",
     "name": "Admin User",
     "role": "ADMIN"
   },
@@ -712,14 +712,14 @@ List all users (Admin only).
   "users": [
     {
       "id": "clxyz123456789",
-      "email": "admin@sohohouse.com",
+      "email": "admin@junobo.com",
       "name": "Admin User",
       "role": "ADMIN",
       "createdAt": "2026-01-01T00:00:00.000Z"
     },
     {
       "id": "clxyz987654321",
-      "email": "finance@sohohouse.com",
+      "email": "finance@junobo.com",
       "name": "Finance User",
       "role": "FINANCE",
       "createdAt": "2026-01-10T00:00:00.000Z"
@@ -739,7 +739,7 @@ Create new user (Admin only).
 **Request:**
 ```json
 {
-  "email": "newuser@sohohouse.com",
+  "email": "newuser@junobo.com",
   "password": "securePassword123",
   "name": "New User",
   "role": "FINANCE"
@@ -758,7 +758,7 @@ Create new user (Admin only).
   "message": "User created successfully",
   "user": {
     "id": "clnew123456789",
-    "email": "newuser@sohohouse.com",
+    "email": "newuser@junobo.com",
     "name": "New User",
     "role": "FINANCE"
   }
@@ -784,7 +784,7 @@ Get single user details.
 ```json
 {
   "id": "clxyz123456789",
-  "email": "user@sohohouse.com",
+  "email": "user@junobo.com",
   "name": "User Name",
   "role": "FINANCE",
   "createdAt": "2026-01-10T00:00:00.000Z",
@@ -804,7 +804,7 @@ Update user details.
 ```json
 {
   "name": "Updated Name",
-  "email": "updated@sohohouse.com",
+  "email": "updated@junobo.com",
   "password": "newPassword123",
   "role": "MANAGEMENT"
 }
@@ -821,7 +821,7 @@ Update user details.
   "message": "User updated successfully",
   "user": {
     "id": "clxyz123456789",
-    "email": "updated@sohohouse.com",
+    "email": "updated@junobo.com",
     "name": "Updated Name",
     "role": "MANAGEMENT"
   }
@@ -866,7 +866,7 @@ Send report via email.
 **Request:**
 ```json
 {
-  "to": ["manager@sohohouse.com", "cfo@sohohouse.com"],
+  "to": ["manager@junobo.com", "cfo@junobo.com"],
   "subject": "Monthly Revenue Report - January 2026",
   "reportType": "summary",
   "month": "2026-01",
@@ -878,7 +878,7 @@ Send report via email.
 ```json
 {
   "message": "Email sent successfully",
-  "recipients": ["manager@sohohouse.com", "cfo@sohohouse.com"]
+  "recipients": ["manager@junobo.com", "cfo@junobo.com"]
 }
 ```
 

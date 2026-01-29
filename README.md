@@ -108,7 +108,7 @@ npm run dev
 7. Open [http://localhost:3000](http://localhost:3000)
 
 ### Default Login
-- **Email**: admin@sohohouse.com
+- **Email**: admin@junobo.com
 - **Password**: admin123
 
 ## Excel Upload Format

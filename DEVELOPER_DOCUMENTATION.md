@@ -529,7 +529,7 @@ export const authOptions: NextAuthOptions = {
 **Request:**
 ```json
 {
-  "to": ["manager@sohohouse.com"],
+  "to": ["manager@junobo.com"],
   "subject": "Monthly Revenue Report",
   "reportType": "summary",
   "month": "2026-01"
@@ -691,7 +691,7 @@ SMTP_HOST="smtp.gmail.com"
 SMTP_PORT="587"
 SMTP_USER="your-email@gmail.com"
 SMTP_PASSWORD="your-app-password"
-EMAIL_FROM="noreply@sohohouse.com"
+EMAIL_FROM="noreply@junobo.com"
 ```
 
 ### Local Development Setup

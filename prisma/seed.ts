@@ -36,7 +36,7 @@ async function main() {
     create: {
       id: 'default',
       name: 'Management Team',
-      email: 'management@sohohouse.com',
+      email: 'management@junobo.com',
       isActive: true,
       reportTypes: JSON.stringify(['revenue-summary', 'member-status']),
     },
