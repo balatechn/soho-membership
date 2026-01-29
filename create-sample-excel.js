@@ -1,178 +1,167 @@
 const XLSX = require('xlsx');
 
-// Create sample data with headers
+// Create sample data with new headers matching user's template
 const data = [
   {
-    'Invoice No': 'INV-2026-001',
+    'Invoice No.': 'INV-2026-001',
     'Invoice Date': '2026-01-15',
     'Global ID': 'SH-MUM-001',
-    'First Name': 'Rahul',
-    'Last Name': 'Sharma',
-    'Membership Type': 'Every House',
-    'House Account Code': 'HAC001',
-    'Product Code': 'MEM-EH',
-    'Product Name': 'Every House Annual Membership',
-    'Payment Mode': 'Bank Transfer',
-    'Net Amount': 250000,
-    'CGST Rate': 9,
-    'CGST Amount': 22500,
-    'SGST Rate': 9,
-    'SGST Amount': 22500,
+    'Name': 'Rahul Sharma',
+    'State': 'Maharashtra',
+    'Email Id': 'rahul.sharma@email.com',
+    'Registration': 'REG001',
+    'Membership': 'Every House',
+    'Month Total': 295000,
+    'CGST 9%': 22500,
+    'SGST 9%': 22500,
+    'CGST 18%': 0,
+    'SGST 18%': 0,
     'Total Tax': 45000,
-    'Total Amount': 295000,
-    'Credit Period Start': '2026-01-15',
-    'Credit Period End': '2027-01-14',
-    'Due Date': '2026-02-15',
-    'UTR / Transaction Ref': 'UTR123456789',
-    'Payment Received Date': '2026-01-20',
-    'Payment Status': 'Paid',
-    'Remarks': 'New membership',
-    'State Code': '27'
+    'Description': 'Annual Membership Fee',
+    'Membership Start Date': '2026-01-15',
+    'Membership End Date': '2027-01-14',
+    'Payment Start Date': '2026-01-15',
+    'Payment End Date': '2026-02-15',
+    'Renewal/Quarterly': 'Renewal',
+    'Product': 'Every House Annual',
+    'Months': 12,
+    'Calculations of Month': 'Jan 2026 - Jan 2027'
   },
   {
-    'Invoice No': 'INV-2026-002',
+    'Invoice No.': 'INV-2026-002',
     'Invoice Date': '2026-01-16',
     'Global ID': 'SH-MUM-002',
-    'First Name': 'Priya',
-    'Last Name': 'Patel',
-    'Membership Type': 'Local House',
-    'House Account Code': 'HAC002',
-    'Product Code': 'MEM-LH',
-    'Product Name': 'Local House Annual Membership',
-    'Payment Mode': 'Credit Card',
-    'Net Amount': 150000,
-    'CGST Rate': 9,
-    'CGST Amount': 13500,
-    'SGST Rate': 9,
-    'SGST Amount': 13500,
+    'Name': 'Priya Patel',
+    'State': 'Maharashtra',
+    'Email Id': 'priya.patel@email.com',
+    'Registration': 'REG002',
+    'Membership': 'Local House',
+    'Month Total': 177000,
+    'CGST 9%': 13500,
+    'SGST 9%': 13500,
+    'CGST 18%': 0,
+    'SGST 18%': 0,
     'Total Tax': 27000,
-    'Total Amount': 177000,
-    'Credit Period Start': '2026-01-16',
-    'Credit Period End': '2027-01-15',
-    'Due Date': '2026-02-16',
-    'UTR / Transaction Ref': '',
-    'Payment Received Date': '',
-    'Payment Status': 'Pending',
-    'Remarks': 'Renewal',
-    'State Code': '27'
+    'Description': 'Annual Membership Fee',
+    'Membership Start Date': '2026-01-16',
+    'Membership End Date': '2027-01-15',
+    'Payment Start Date': '2026-01-16',
+    'Payment End Date': '2026-02-16',
+    'Renewal/Quarterly': 'New',
+    'Product': 'Local House Annual',
+    'Months': 12,
+    'Calculations of Month': 'Jan 2026 - Jan 2027'
   },
   {
-    'Invoice No': 'INV-2026-003',
+    'Invoice No.': 'INV-2026-003',
     'Invoice Date': '2026-01-17',
     'Global ID': 'SH-MUM-003',
-    'First Name': 'Amit',
-    'Last Name': 'Desai',
-    'Membership Type': 'Under 27',
-    'House Account Code': 'HAC003',
-    'Product Code': 'MEM-U27',
-    'Product Name': 'Under 27 Membership',
-    'Payment Mode': 'UPI',
-    'Net Amount': 75000,
-    'CGST Rate': 9,
-    'CGST Amount': 6750,
-    'SGST Rate': 9,
-    'SGST Amount': 6750,
+    'Name': 'Amit Desai',
+    'State': 'Gujarat',
+    'Email Id': 'amit.desai@email.com',
+    'Registration': 'REG003',
+    'Membership': 'Under 27',
+    'Month Total': 88500,
+    'CGST 9%': 6750,
+    'SGST 9%': 6750,
+    'CGST 18%': 0,
+    'SGST 18%': 0,
     'Total Tax': 13500,
-    'Total Amount': 88500,
-    'Credit Period Start': '2026-01-17',
-    'Credit Period End': '2027-01-16',
-    'Due Date': '2026-02-17',
-    'UTR / Transaction Ref': 'UPI789456123',
-    'Payment Received Date': '2026-01-17',
-    'Payment Status': 'Paid',
-    'Remarks': 'New member - Under 27 program',
-    'State Code': '27'
+    'Description': 'Under 27 Membership',
+    'Membership Start Date': '2026-01-17',
+    'Membership End Date': '2027-01-16',
+    'Payment Start Date': '2026-01-17',
+    'Payment End Date': '2026-02-17',
+    'Renewal/Quarterly': 'New',
+    'Product': 'Under 27 Annual',
+    'Months': 12,
+    'Calculations of Month': 'Jan 2026 - Jan 2027'
   },
   {
-    'Invoice No': 'INV-2026-004',
+    'Invoice No.': 'INV-2026-004',
     'Invoice Date': '2026-01-18',
     'Global ID': 'SH-MUM-004',
-    'First Name': 'Sneha',
-    'Last Name': 'Kapoor',
-    'Membership Type': 'Every House',
-    'House Account Code': 'HAC004',
-    'Product Code': 'MEM-EH-Q',
-    'Product Name': 'Every House Quarterly',
-    'Payment Mode': 'Bank Transfer',
-    'Net Amount': 85000,
-    'CGST Rate': 9,
-    'CGST Amount': 7650,
-    'SGST Rate': 9,
-    'SGST Amount': 7650,
+    'Name': 'Sneha Kapoor',
+    'State': 'Maharashtra',
+    'Email Id': 'sneha.kapoor@email.com',
+    'Registration': 'REG004',
+    'Membership': 'Every House',
+    'Month Total': 100300,
+    'CGST 9%': 7650,
+    'SGST 9%': 7650,
+    'CGST 18%': 0,
+    'SGST 18%': 0,
     'Total Tax': 15300,
-    'Total Amount': 100300,
-    'Credit Period Start': '2026-01-18',
-    'Credit Period End': '2026-04-17',
-    'Due Date': '2026-02-18',
-    'UTR / Transaction Ref': '',
-    'Payment Received Date': '',
-    'Payment Status': 'Pending',
-    'Remarks': 'Quarterly payment plan',
-    'State Code': '27'
+    'Description': 'Quarterly Membership Fee',
+    'Membership Start Date': '2026-01-18',
+    'Membership End Date': '2026-04-17',
+    'Payment Start Date': '2026-01-18',
+    'Payment End Date': '2026-02-18',
+    'Renewal/Quarterly': 'Quarterly',
+    'Product': 'Every House Quarterly',
+    'Months': 3,
+    'Calculations of Month': 'Jan 2026 - Apr 2026'
   },
   {
-    'Invoice No': 'INV-2026-005',
+    'Invoice No.': 'INV-2026-005',
     'Invoice Date': '2026-01-19',
     'Global ID': 'SH-MUM-005',
-    'First Name': 'Vikram',
-    'Last Name': 'Mehta',
-    'Membership Type': 'Corporate',
-    'House Account Code': 'HAC005',
-    'Product Code': 'MEM-CORP',
-    'Product Name': 'Corporate Membership',
-    'Payment Mode': 'Cheque',
-    'Net Amount': 500000,
-    'CGST Rate': 9,
-    'CGST Amount': 45000,
-    'SGST Rate': 9,
-    'SGST Amount': 45000,
+    'Name': 'Vikram Singh',
+    'State': 'Delhi',
+    'Email Id': 'vikram.singh@corporate.com',
+    'Registration': 'REG005',
+    'Membership': 'Corporate',
+    'Month Total': 500000,
+    'CGST 9%': 0,
+    'SGST 9%': 0,
+    'CGST 18%': 45000,
+    'SGST 18%': 45000,
     'Total Tax': 90000,
-    'Total Amount': 590000,
-    'Credit Period Start': '2026-01-19',
-    'Credit Period End': '2027-01-18',
-    'Due Date': '2026-02-19',
-    'UTR / Transaction Ref': 'CHQ456789',
-    'Payment Received Date': '2026-01-25',
-    'Payment Status': 'Paid',
-    'Remarks': 'Corporate account - 5 memberships',
-    'State Code': '27'
+    'Description': 'Corporate Membership (5 users)',
+    'Membership Start Date': '2026-01-19',
+    'Membership End Date': '2027-01-18',
+    'Payment Start Date': '2026-01-19',
+    'Payment End Date': '2026-02-19',
+    'Renewal/Quarterly': 'Renewal',
+    'Product': 'Corporate Annual',
+    'Months': 12,
+    'Calculations of Month': 'Jan 2026 - Jan 2027'
   }
 ];
 
 // Create workbook and worksheet
 const ws = XLSX.utils.json_to_sheet(data);
 const wb = XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(wb, ws, 'Invoices');
+XLSX.utils.book_append_sheet(wb, ws, 'Invoice Template');
 
 // Set column widths
 ws['!cols'] = [
-  { wch: 15 }, // Invoice No
-  { wch: 12 }, // Invoice Date
-  { wch: 12 }, // Global ID
-  { wch: 12 }, // First Name
-  { wch: 12 }, // Last Name
-  { wch: 15 }, // Membership Type
-  { wch: 18 }, // House Account Code
-  { wch: 12 }, // Product Code
-  { wch: 30 }, // Product Name
-  { wch: 14 }, // Payment Mode
-  { wch: 12 }, // Net Amount
-  { wch: 10 }, // CGST Rate
-  { wch: 12 }, // CGST Amount
-  { wch: 10 }, // SGST Rate
-  { wch: 12 }, // SGST Amount
-  { wch: 10 }, // Total Tax
-  { wch: 12 }, // Total Amount
-  { wch: 18 }, // Credit Period Start
-  { wch: 16 }, // Credit Period End
-  { wch: 12 }, // Due Date
-  { wch: 20 }, // UTR / Transaction Ref
-  { wch: 20 }, // Payment Received Date
-  { wch: 14 }, // Payment Status
-  { wch: 30 }, // Remarks
-  { wch: 10 }, // State Code
+  { wch: 15 },  // Invoice No.
+  { wch: 12 },  // Invoice Date
+  { wch: 12 },  // Global ID
+  { wch: 20 },  // Name
+  { wch: 15 },  // State
+  { wch: 25 },  // Email Id
+  { wch: 12 },  // Registration
+  { wch: 15 },  // Membership
+  { wch: 12 },  // Month Total
+  { wch: 10 },  // CGST 9%
+  { wch: 10 },  // SGST 9%
+  { wch: 10 },  // CGST 18%
+  { wch: 10 },  // SGST 18%
+  { wch: 12 },  // Total Tax
+  { wch: 25 },  // Description
+  { wch: 18 },  // Membership Start Date
+  { wch: 18 },  // Membership End Date
+  { wch: 18 },  // Payment Start Date
+  { wch: 18 },  // Payment End Date
+  { wch: 18 },  // Renewal/Quarterly
+  { wch: 20 },  // Product
+  { wch: 10 },  // Months
+  { wch: 22 },  // Calculations of Month
 ];
 
 // Write the file
 XLSX.writeFile(wb, 'public/sample-invoice-template.xlsx');
 console.log('Sample Excel file created: public/sample-invoice-template.xlsx');
+console.log('Headers:', Object.keys(data[0]).join(', '));
