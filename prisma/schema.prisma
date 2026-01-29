@@ -1,0 +1,188 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// User & Authentication
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String
+  role          String    @default("MANAGEMENT") // ADMIN, FINANCE, MANAGEMENT
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  uploadLogs    UploadLog[]
+  auditLogs     AuditLog[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Member Master
+model Member {
+  id                  String    @id @default(cuid())
+  globalId            String    @unique
+  name                String
+  email               String?
+  pinCode             String?
+  state               String?
+  status              String    @default("ACTIVE") // ACTIVE, EXPIRED, RENEWED, QUARTERLY, FROZEN
+  product             String?   // Regular, Local House, Every House, U27
+  membershipType      String?   // Annual, Quarterly
+  membershipStartDate DateTime?
+  membershipEndDate   DateTime?
+  paymentStartDate    DateTime?
+  paymentEndDate      DateTime?
+  registration        String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  invoices            Invoice[]
+  location            String    @default("Mumbai") // Support multiple locations
+}
+
+// Invoice
+model Invoice {
+  id                  String    @id @default(cuid())
+  invoiceNo           String
+  invoiceDate         DateTime
+  memberId            String
+  member              Member    @relation(fields: [memberId], references: [id])
+  
+  // Member details at time of invoice
+  name                String
+  pinCode             String?
+  state               String?
+  email               String?
+  registration        String?
+  
+  // Amounts
+  membership          Float     @default(0)
+  membershipTotal     Float     @default(0)
+  cgst                Float     @default(0) // 9%
+  sgst                Float     @default(0) // 9%
+  igst                Float     @default(0) // 18%
+  totalTax            Float     @default(0)
+  totalAmount         Float
+  
+  // Descriptions
+  description1        String?
+  description         String?
+  
+  // Dates
+  membershipStartDate DateTime?
+  membershipEndDate   DateTime?
+  paymentStartDate    DateTime?
+  paymentEndDate      DateTime?
+  
+  // Type & Category
+  type                String?   // e.g., Sep Q
+  renewalType         String?   // Renewal / Quarterly
+  month               String?
+  product             String?
+  monthsTenure        Int?      // Number of months
+  calculationMonth    Int?
+  billingCycle        String?   // Quarterly, Annual
+  
+  // Metadata
+  uploadMonth         String    // YYYY-MM format
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@unique([invoiceNo, uploadMonth])
+}
+
+// Upload Log
+model UploadLog {
+  id            String   @id @default(cuid())
+  fileName      String
+  uploadMonth   String   // YYYY-MM format
+  recordsCount  Int
+  successCount  Int
+  failedCount   Int
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  status        String   @default("COMPLETED") // PENDING, COMPLETED, FAILED
+  errors        String?  // JSON string of errors
+  createdAt     DateTime @default(now())
+}
+
+// Audit Log
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String   // CREATE, UPDATE, DELETE, UPLOAD, LOGIN, EXPORT
+  entity      String   // Member, Invoice, User, etc.
+  entityId    String?
+  details     String?  // JSON string of changes
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+}
+
+// Email Configuration
+model EmailConfig {
+  id              String   @id @default(cuid())
+  name            String
+  email           String
+  isActive        Boolean  @default(true)
+  reportTypes     String   // JSON array of report types
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Scheduled Reports
+model ScheduledReport {
+  id            String    @id @default(cuid())
+  reportType    String
+  schedule      String    // MONTHLY, WEEKLY
+  dayOfMonth    Int?      // For monthly
+  recipients    String    // JSON array of email addresses
+  isActive      Boolean   @default(true)
+  lastRun       DateTime?
+  nextRun       DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}

@@ -1,0 +1,177 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { StatCard } from "@/components/stat-card"
+import { RevenueChart, ProductChart, MemberStatusChart } from "@/components/charts"
+import { DollarSign, Users, RefreshCw, FileText, AlertTriangle, TrendingUp } from "lucide-react"
+import { formatCurrency, formatDate } from "@/lib/utils"
+
+interface DashboardData {
+  revenue: {
+    currentMonth: number
+    lastMonth: number
+    change: number
+    tax: number
+    invoiceCount: number
+  }
+  members: {
+    total: number
+    active: number
+    expired: number
+    upcomingRenewals: number
+  }
+  productDistribution: Array<{ product: string; count: number }>
+  monthlyTrend: Array<{ month: string; revenue: number }>
+}
+
+export default function DashboardPage() {
+  const [data, setData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await fetch("/api/reports?type=dashboard")
+      const result = await response.json()
+      setData(result.data)
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
+      </div>
+    )
+  }
+
+  if (!data) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500">Failed to load dashboard data</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-500">Welcome to Soho House Mumbai Membership Management</p>
+        </div>
+        <button
+          onClick={fetchDashboardData}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-sm font-medium"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Refresh
+        </button>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Monthly Revenue"
+          value={data.revenue.currentMonth}
+          format="currency"
+          change={data.revenue.change}
+          changeLabel="vs last month"
+          icon={<DollarSign className="w-5 h-5" />}
+        />
+        <StatCard
+          title="Tax Collected"
+          value={data.revenue.tax}
+          format="currency"
+          icon={<TrendingUp className="w-5 h-5" />}
+        />
+        <StatCard
+          title="Active Members"
+          value={data.members.active}
+          icon={<Users className="w-5 h-5" />}
+        />
+        <StatCard
+          title="Upcoming Renewals"
+          value={data.members.upcomingRenewals}
+          icon={<AlertTriangle className="w-5 h-5 text-amber-500" />}
+        />
+      </div>
+
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RevenueChart data={data.monthlyTrend} />
+        <ProductChart data={data.productDistribution} />
+      </div>
+
+      {/* Member Status & Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <MemberStatusChart 
+            data={{
+              active: data.members.active,
+              expired: data.members.expired,
+              renewed: 0,
+              quarterly: 0,
+              frozen: 0,
+            }} 
+          />
+        </div>
+        
+        {/* Quick Stats */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between py-3 border-b border-gray-100">
+              <span className="text-gray-600">Total Members</span>
+              <span className="font-semibold text-gray-900">{data.members.total}</span>
+            </div>
+            <div className="flex items-center justify-between py-3 border-b border-gray-100">
+              <span className="text-gray-600">Invoices This Month</span>
+              <span className="font-semibold text-gray-900">{data.revenue.invoiceCount}</span>
+            </div>
+            <div className="flex items-center justify-between py-3 border-b border-gray-100">
+              <span className="text-gray-600">Net Revenue</span>
+              <span className="font-semibold text-green-600">
+                {formatCurrency(data.revenue.currentMonth - data.revenue.tax)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-3">
+              <span className="text-gray-600">Expired Members</span>
+              <span className="font-semibold text-red-600">{data.members.expired}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Renewals Alert */}
+      {data.members.upcomingRenewals > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-6 h-6 text-amber-600" />
+            <div>
+              <h4 className="font-medium text-amber-900">Attention Required</h4>
+              <p className="text-amber-700 text-sm">
+                {data.members.upcomingRenewals} member{data.members.upcomingRenewals > 1 ? "s" : ""} have 
+                memberships expiring in the next 30 days. Consider sending renewal reminders.
+              </p>
+            </div>
+            <a
+              href="/reports?type=upcoming-renewals"
+              className="ml-auto px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium"
+            >
+              View Renewals
+            </a>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
