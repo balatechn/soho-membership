@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react"
 import { useState, useEffect } from "react"
 import { Settings, Users, Bell, Plus, Edit2, Trash2, Eye, EyeOff, X, Check, RefreshCw } from "lucide-react"
-import { redirect } from "next/navigation"
+import { useRouter } from "next/navigation"
 
 interface User {
   id: string
@@ -14,7 +14,8 @@ interface User {
 }
 
 export default function SettingsPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -33,13 +34,25 @@ export default function SettingsPage() {
   const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
-    if (session?.user?.role === "ADMIN") {
+    if (status === "authenticated" && session?.user?.role === "ADMIN") {
       fetchUsers()
+    } else if (status === "authenticated" && session?.user?.role !== "ADMIN") {
+      router.push("/dashboard")
     }
-  }, [session])
+  }, [session, status, router])
 
-  if (session?.user?.role !== "ADMIN") {
-    redirect("/dashboard")
+  // Show loading while session is being fetched
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+      </div>
+    )
+  }
+
+  // Redirect non-admin users
+  if (status === "authenticated" && session?.user?.role !== "ADMIN") {
+    return null
   }
 
   const fetchUsers = async () => {
