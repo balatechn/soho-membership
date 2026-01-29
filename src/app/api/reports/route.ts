@@ -522,6 +522,10 @@ async function getDashboardData() {
   const currentMonth = startOfMonth(today)
   const lastMonth = startOfMonth(subMonths(today, 1))
   const next30Days = addDays(today, 30)
+  
+  // Format months as YYYY-MM for uploadMonth queries
+  const currentUploadMonth = format(today, "yyyy-MM")
+  const lastUploadMonth = format(subMonths(today, 1), "yyyy-MM")
 
   // Run ALL queries in parallel for faster response
   const [
@@ -532,13 +536,10 @@ async function getDashboardData() {
     productDistribution,
     ...monthlyTrendResults
   ] = await Promise.all([
-    // Current month revenue
+    // Current month revenue (by uploadMonth)
     prisma.invoice.aggregate({
       where: {
-        invoiceDate: {
-          gte: currentMonth,
-          lte: today,
-        }
+        uploadMonth: currentUploadMonth
       },
       _sum: {
         totalAmount: true,
@@ -546,13 +547,10 @@ async function getDashboardData() {
       },
       _count: true,
     }),
-    // Last month revenue for comparison
+    // Last month revenue for comparison (by uploadMonth)
     prisma.invoice.aggregate({
       where: {
-        invoiceDate: {
-          gte: lastMonth,
-          lt: currentMonth,
-        }
+        uploadMonth: lastUploadMonth
       },
       _sum: {
         totalAmount: true,
@@ -579,16 +577,13 @@ async function getDashboardData() {
       where: { status: "ACTIVE" },
       _count: true,
     }),
-    // Monthly trend (last 6 months) - all in parallel
+    // Monthly trend (last 6 months) - by uploadMonth
     ...Array.from({ length: 6 }, (_, i) => {
-      const monthStart = startOfMonth(subMonths(today, i))
-      const monthEnd = endOfMonth(monthStart)
+      const monthDate = subMonths(today, i)
+      const uploadMonth = format(monthDate, "yyyy-MM")
       return prisma.invoice.aggregate({
         where: {
-          invoiceDate: {
-            gte: monthStart,
-            lte: monthEnd,
-          }
+          uploadMonth: uploadMonth
         },
         _sum: {
           totalAmount: true,
