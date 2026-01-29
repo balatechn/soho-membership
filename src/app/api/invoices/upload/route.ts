@@ -153,6 +153,11 @@ export async function POST(request: NextRequest) {
       const invoiceDateVal = getColumnValue(row, COLUMNS.invoiceDate)
       const monthTotalVal = getColumnValue(row, COLUMNS.monthTotal)
 
+      // Skip completely empty rows (common at end of Excel files)
+      if (!invoiceNoVal && !globalIdVal && !invoiceDateVal && !monthTotalVal) {
+        continue // Skip this row silently - it's just an empty row
+      }
+
       // Validate mandatory fields
       if (!invoiceNoVal) {
         errors.push({ row: rowNum, field: "Invoice No", message: "Invoice No is required" })
