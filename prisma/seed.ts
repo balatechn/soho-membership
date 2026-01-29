@@ -1,7 +1,14 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient()
+// Use DIRECT_URL for seeding to avoid pooler issues
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DIRECT_URL || process.env.DATABASE_URL
+    }
+  }
+})
 
 async function main() {
   console.log('Seeding database...')
