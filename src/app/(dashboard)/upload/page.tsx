@@ -1,5 +1,5 @@
 import { ExcelUploader } from "@/components/excel-uploader"
-import { FileSpreadsheet, History } from "lucide-react"
+import { FileSpreadsheet, History, Download } from "lucide-react"
 import { prisma } from "@/lib/prisma"
 import { formatDate } from "@/lib/utils"
 
@@ -22,9 +22,19 @@ export default async function UploadPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Upload Invoices</h1>
-        <p className="text-gray-500">Upload monthly invoice data from Excel files</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Upload Invoices</h1>
+          <p className="text-gray-500">Upload monthly invoice data from Excel files</p>
+        </div>
+        <a
+          href="/sample-invoice-template.xlsx"
+          download
+          className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Download Sample Template
+        </a>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -51,29 +61,28 @@ export default async function UploadPage() {
                   "Invoice No*",
                   "Invoice Date*",
                   "Global ID*",
-                  "Name",
-                  "Pin Code",
-                  "State",
-                  "Email ID",
-                  "Registration",
-                  "Membership",
-                  "Membership Total",
-                  "CGST – 9%",
-                  "SGST – 9%",
-                  "IGST – 18%",
+                  "First Name*",
+                  "Last Name",
+                  "Membership Type",
+                  "House Account Code",
+                  "Product Code",
+                  "Product Name",
+                  "Payment Mode",
+                  "Net Amount",
+                  "CGST Rate",
+                  "CGST Amount",
+                  "SGST Rate",
+                  "SGST Amount",
                   "Total Tax",
                   "Total Amount*",
-                  "Description 1",
-                  "Description",
-                  "Membership Start Date",
-                  "Membership End Date",
-                  "Payment Start Date",
-                  "Payment End Date",
-                  "Type",
-                  "Renewal / Quarterly",
-                  "Month",
-                  "Product",
-                  "Months (Tenure)",
+                  "Credit Period Start",
+                  "Credit Period End",
+                  "Due Date",
+                  "UTR / Transaction Ref",
+                  "Payment Received Date",
+                  "Payment Status",
+                  "Remarks",
+                  "State Code",
                 ].map((col) => (
                   <span
                     key={col}
