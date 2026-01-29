@@ -2,13 +2,14 @@
 
 import { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { BarChart3, Download, Calendar, PieChart, TrendingUp, Users, FileText, Clock } from "lucide-react"
+import { BarChart3, Download, Calendar, PieChart, TrendingUp, Users, FileText, Clock, Calculator } from "lucide-react"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import { QuarterlyChart } from "@/components/charts"
 import toast from "react-hot-toast"
 
 const reportTypes = [
   { id: "summary", name: "Monthly Revenue Summary", icon: TrendingUp },
+  { id: "accrual", name: "Monthly Accrual Report", icon: Calculator },
   { id: "product", name: "Product-Wise Revenue", icon: PieChart },
   { id: "membership-type", name: "Membership Type Revenue", icon: BarChart3 },
   { id: "renewals-vs-new", name: "Renewals vs New Intake", icon: Users },
@@ -396,6 +397,114 @@ function ReportsContent() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Accrual Report */}
+              {activeReport === "accrual" && reportData.data && (
+                <div className="space-y-6">
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-purple-50 p-6 rounded-lg">
+                      <p className="text-sm text-purple-600 mb-1">Total Accrued Revenue</p>
+                      <p className="text-3xl font-bold text-purple-900">
+                        {formatCurrency(reportData.data.totals?.accruedRevenue || 0)}
+                      </p>
+                      <p className="text-sm text-purple-600 mt-1">
+                        (Recognized over time)
+                      </p>
+                    </div>
+                    <div className="bg-blue-50 p-6 rounded-lg">
+                      <p className="text-sm text-blue-600 mb-1">Total Invoiced</p>
+                      <p className="text-3xl font-bold text-blue-900">
+                        {formatCurrency(reportData.data.totals?.invoicedRevenue || 0)}
+                      </p>
+                      <p className="text-sm text-blue-600 mt-1">
+                        (Billed amount)
+                      </p>
+                    </div>
+                    <div className="bg-amber-50 p-6 rounded-lg">
+                      <p className="text-sm text-amber-600 mb-1">Deferred Revenue</p>
+                      <p className="text-3xl font-bold text-amber-900">
+                        {formatCurrency((reportData.data.totals?.invoicedRevenue || 0) - (reportData.data.totals?.accruedRevenue || 0))}
+                      </p>
+                      <p className="text-sm text-amber-600 mt-1">
+                        (Yet to be recognized)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Monthly Accruals Table */}
+                  {reportData.data.monthlyAccruals && reportData.data.monthlyAccruals.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Monthly Accrual Breakdown</h3>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Month</th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Accrued Revenue</th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Accrued Tax</th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Entries</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {reportData.data.monthlyAccruals.map((m: any) => (
+                              <tr key={m.month} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 font-medium">{m.month}</td>
+                                <td className="px-6 py-4 text-right">{formatCurrency(m.amount)}</td>
+                                <td className="px-6 py-4 text-right">{formatCurrency(m.taxAmount)}</td>
+                                <td className="px-6 py-4 text-right font-semibold">{formatCurrency(m.amount + m.taxAmount)}</td>
+                                <td className="px-6 py-4 text-right">{m.count}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Product Breakdown */}
+                  {reportData.data.byProduct && reportData.data.byProduct.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Accruals by Product</h3>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Accrued Revenue</th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Accrued Tax</th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Entries</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {reportData.data.byProduct.map((p: any) => (
+                              <tr key={p.product} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 font-medium">{p.product || "N/A"}</td>
+                                <td className="px-6 py-4 text-right">{formatCurrency(p.amount)}</td>
+                                <td className="px-6 py-4 text-right">{formatCurrency(p.taxAmount)}</td>
+                                <td className="px-6 py-4 text-right font-semibold">{formatCurrency(p.amount + p.taxAmount)}</td>
+                                <td className="px-6 py-4 text-right">{p.count}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* How Accrual Works */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-700 mb-2">How Accrual Works</h4>
+                    <p className="text-sm text-gray-600">
+                      When &quot;Calculations of Month&quot; is set (e.g., 3, 6, or 12 months), the total invoice amount is divided equally 
+                      across those months. For example, a ₹1,20,000 annual membership with 12-month calculation will accrue 
+                      ₹10,000 per month. This helps recognize revenue in the period it&apos;s earned, not when it&apos;s billed.
+                    </p>
                   </div>
                 </div>
               )}

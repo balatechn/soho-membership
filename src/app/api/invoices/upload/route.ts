@@ -208,11 +208,15 @@ export async function POST(request: NextRequest) {
       const sgst18 = Number(getColumnValue(row, COLUMNS.sgst18)) || 0
       const monthsVal = getColumnValue(row, COLUMNS.months)
       const monthsTenure = monthsVal ? Number(monthsVal) : null
+      
+      // Get Calculations of Month (for accrual)
+      const calcMonthVal = getColumnValue(row, COLUMNS.calculationMonth)
+      const calculationMonth = calcMonthVal ? Number(calcMonthVal) : (monthsTenure || 1)
 
       // Determine billing cycle
       let billingCycle = null
-      if (monthsTenure) {
-        billingCycle = monthsTenure >= 12 ? "Annual" : "Quarterly"
+      if (calculationMonth) {
+        billingCycle = calculationMonth >= 12 ? "Annual" : calculationMonth >= 6 ? "Half-Yearly" : "Quarterly"
       }
 
       // Process invoice
@@ -243,7 +247,7 @@ export async function POST(request: NextRequest) {
         month: String(getColumnValue(row, COLUMNS.calculationMonth) || "") || null,
         product: String(getColumnValue(row, COLUMNS.product) || "") || null,
         monthsTenure,
-        calculationMonth: null,
+        calculationMonth, // Now properly parsed for accrual
         billingCycle,
       })
     }
@@ -324,7 +328,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Create invoice
-        await prisma.invoice.create({
+        const createdInvoice = await prisma.invoice.create({
           data: {
             invoiceNo: invoice.invoiceNo,
             invoiceDate: invoice.invoiceDate,
@@ -357,6 +361,32 @@ export async function POST(request: NextRequest) {
             uploadMonth,
           }
         })
+
+        // Create accrual entries based on "Calculations of Month"
+        const calcMonths = invoice.calculationMonth || invoice.monthsTenure || 1
+        if (calcMonths > 0) {
+          const monthlyAmount = invoice.totalAmount / calcMonths
+          const monthlyTax = invoice.totalTax / calcMonths
+          const startDate = invoice.membershipStartDate || invoice.invoiceDate
+          
+          const accrualData = []
+          for (let i = 0; i < calcMonths; i++) {
+            const accrualDate = new Date(startDate)
+            accrualDate.setMonth(accrualDate.getMonth() + i)
+            const accrualMonth = `${accrualDate.getFullYear()}-${String(accrualDate.getMonth() + 1).padStart(2, '0')}`
+            
+            accrualData.push({
+              invoiceId: createdInvoice.id,
+              accrualMonth,
+              amount: Math.round(monthlyAmount * 100) / 100, // Round to 2 decimals
+              taxAmount: Math.round(monthlyTax * 100) / 100,
+            })
+          }
+          
+          await prisma.accrual.createMany({
+            data: accrualData,
+          })
+        }
 
         successCount++
       } catch (error) {

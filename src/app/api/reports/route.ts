@@ -51,6 +51,8 @@ export async function GET(request: NextRequest) {
     switch (reportType) {
       case "summary":
         return await getRevenueSummary(dateFilter)
+      case "accrual":
+        return await getAccrualReport(month || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`)
       case "product":
         return await getProductWiseRevenue(dateFilter)
       case "membership-type":
@@ -79,6 +81,102 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+// Accrual Report - Shows monthly revenue recognized from accruals
+async function getAccrualReport(month: string) {
+  // Get accruals for the specified month
+  const accruals = await prisma.accrual.findMany({
+    where: {
+      accrualMonth: month,
+    },
+    include: {
+      invoice: {
+        select: {
+          invoiceNo: true,
+          invoiceDate: true,
+          totalAmount: true,
+          calculationMonth: true,
+          name: true,
+          product: true,
+          member: {
+            select: {
+              globalId: true,
+            }
+          }
+        }
+      }
+    }
+  })
+
+  // Calculate totals
+  const totalAccrued = accruals.reduce((sum: number, a) => sum + a.amount, 0)
+  const totalTax = accruals.reduce((sum: number, a) => sum + a.taxAmount, 0)
+
+  // Get comparison with actual invoices in that month
+  const [y, m] = month.split('-').map(Number)
+  const monthStart = new Date(y, m - 1, 1)
+  const monthEnd = new Date(y, m, 0, 23, 59, 59)
+
+  const actualInvoices = await prisma.invoice.aggregate({
+    where: {
+      invoiceDate: {
+        gte: monthStart,
+        lte: monthEnd,
+      }
+    },
+    _sum: {
+      totalAmount: true,
+      totalTax: true,
+    },
+    _count: true,
+  })
+
+  // Group by product
+  type ProductAccum = Record<string, { amount: number; taxAmount: number; count: number }>
+  const byProduct = accruals.reduce((acc: ProductAccum, a) => {
+    const product = a.invoice.product || 'Unknown'
+    if (!acc[product]) {
+      acc[product] = { amount: 0, taxAmount: 0, count: 0 }
+    }
+    acc[product].amount += a.amount
+    acc[product].taxAmount += a.taxAmount
+    acc[product].count += 1
+    return acc
+  }, {} as ProductAccum)
+
+  return NextResponse.json({
+    report: "Monthly Accrual Report",
+    month,
+    data: {
+      totals: {
+        accruedRevenue: Math.round(totalAccrued * 100) / 100,
+        accruedTax: Math.round(totalTax * 100) / 100,
+        invoicedRevenue: actualInvoices._sum.totalAmount || 0,
+      },
+      monthlyAccruals: [{
+        month,
+        amount: Math.round(totalAccrued * 100) / 100,
+        taxAmount: Math.round(totalTax * 100) / 100,
+        count: accruals.length,
+      }],
+      byProduct: Object.entries(byProduct).map(([product, data]: [string, { amount: number; taxAmount: number; count: number }]) => ({
+        product,
+        amount: Math.round(data.amount * 100) / 100,
+        taxAmount: Math.round(data.taxAmount * 100) / 100,
+        count: data.count,
+      })),
+      details: accruals.slice(0, 50).map((a: typeof accruals[0]) => ({
+        invoiceNo: a.invoice.invoiceNo,
+        memberName: a.invoice.name,
+        globalId: a.invoice.member.globalId,
+        product: a.invoice.product,
+        originalAmount: a.invoice.totalAmount,
+        calculationMonths: a.invoice.calculationMonth,
+        monthlyAccrual: Math.round(a.amount * 100) / 100,
+      }))
+    }
+  })
 }
 
 async function getRevenueSummary(dateFilter: any) {

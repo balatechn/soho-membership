@@ -125,15 +125,32 @@ model Invoice {
   month               String?
   product             String?
   monthsTenure        Int?      // Number of months
-  calculationMonth    Int?
+  calculationMonth    Int?      // 3, 6, or 12 - for accrual calculation
   billingCycle        String?   // Quarterly, Annual
   
   // Metadata
   uploadMonth         String    // YYYY-MM format
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
+  
+  // Accrual entries
+  accruals            Accrual[]
 
   @@unique([invoiceNo, uploadMonth])
+}
+
+// Monthly Accrual - Revenue recognized per month
+model Accrual {
+  id            String   @id @default(cuid())
+  invoiceId     String
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  accrualMonth  String   // YYYY-MM format - the month this revenue belongs to
+  amount        Float    // Monthly accrued amount (totalAmount / calculationMonth)
+  taxAmount     Float    @default(0) // Monthly tax portion
+  createdAt     DateTime @default(now())
+
+  @@unique([invoiceId, accrualMonth])
+  @@index([accrualMonth])
 }
 
 // Upload Log
