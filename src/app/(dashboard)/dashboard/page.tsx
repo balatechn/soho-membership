@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { StatCard } from "@/components/stat-card"
 import { RevenueChart, ProductChart, MemberStatusChart } from "@/components/charts"
 import { DollarSign, Users, RefreshCw, FileText, AlertTriangle, TrendingUp } from "lucide-react"
@@ -24,25 +24,39 @@ interface DashboardData {
   monthlyTrend: Array<{ month: string; revenue: number }>
 }
 
+// Simple cache for dashboard data
+let dashboardCache: { data: DashboardData | null; timestamp: number } = { data: null, timestamp: 0 }
+const CACHE_TTL = 60000 // 1 minute cache
+
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<DashboardData | null>(dashboardCache.data)
+  const [loading, setLoading] = useState(!dashboardCache.data)
 
-  useEffect(() => {
-    fetchDashboardData()
-  }, [])
+  const fetchDashboardData = useCallback(async (forceRefresh = false) => {
+    // Use cache if available and not expired
+    const now = Date.now()
+    if (!forceRefresh && dashboardCache.data && (now - dashboardCache.timestamp) < CACHE_TTL) {
+      setData(dashboardCache.data)
+      setLoading(false)
+      return
+    }
 
-  const fetchDashboardData = async () => {
     try {
+      setLoading(true)
       const response = await fetch("/api/reports?type=dashboard")
       const result = await response.json()
+      dashboardCache = { data: result.data, timestamp: now }
       setData(result.data)
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [fetchDashboardData])
 
   if (loading) {
     return (
@@ -95,7 +109,7 @@ export default function DashboardPage() {
           <p className="text-gray-500">Welcome to Soho House Mumbai Membership Management</p>
         </div>
         <button
-          onClick={fetchDashboardData}
+          onClick={() => fetchDashboardData(true)}
           className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-sm font-medium"
         >
           <RefreshCw className="w-4 h-4" />

@@ -28,7 +28,11 @@ export async function GET() {
       orderBy: { createdAt: "desc" }
     })
 
-    return NextResponse.json({ users })
+    return NextResponse.json({ users }, {
+      headers: {
+        'Cache-Control': 'private, max-age=10',
+      }
+    })
   } catch (error) {
     console.error("Error fetching users:", error)
     return NextResponse.json(
