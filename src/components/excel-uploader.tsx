@@ -61,6 +61,13 @@ export function ExcelUploader() {
         body: formData,
       })
 
+      // Handle non-JSON responses
+      const contentType = response.headers.get("content-type")
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text()
+        throw new Error(text || "Server returned an invalid response")
+      }
+
       const data = await response.json()
 
       if (!response.ok) {
@@ -70,6 +77,7 @@ export function ExcelUploader() {
       setPreviewData(data)
       toast.success("Preview generated successfully")
     } catch (error: any) {
+      console.error("Preview error:", error)
       toast.error(error.message || "Failed to preview file")
     } finally {
       setLoading(false)
@@ -91,6 +99,13 @@ export function ExcelUploader() {
         body: formData,
       })
 
+      // Handle non-JSON responses
+      const contentType = response.headers.get("content-type")
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text()
+        throw new Error(text || "Server returned an invalid response")
+      }
+
       const data = await response.json()
 
       if (!response.ok) {
@@ -100,6 +115,7 @@ export function ExcelUploader() {
       setImportResult(data)
       toast.success(data.message)
     } catch (error: any) {
+      console.error("Import error:", error)
       toast.error(error.message || "Failed to import file")
     } finally {
       setLoading(false)

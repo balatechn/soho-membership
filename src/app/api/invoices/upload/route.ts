@@ -408,10 +408,11 @@ export async function POST(request: NextRequest) {
       errors,
     })
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Upload error:", error)
+    const errorMessage = error instanceof Error ? error.message : "Failed to process upload"
     return NextResponse.json(
-      { error: "Failed to process upload" },
+      { error: errorMessage, details: String(error) },
       { status: 500 }
     )
   }
