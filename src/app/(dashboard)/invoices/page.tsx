@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { FileText, Search, Download, ChevronLeft, ChevronRight } from "lucide-react"
 import { formatDate, formatCurrency } from "@/lib/utils"
@@ -32,7 +32,7 @@ interface Pagination {
   pages: number
 }
 
-export default function InvoicesPage() {
+function InvoicesContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [invoices, setInvoices] = useState<Invoice[]>([])
@@ -259,5 +259,17 @@ export default function InvoicesPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function InvoicesPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+      </div>
+    }>
+      <InvoicesContent />
+    </Suspense>
   )
 }

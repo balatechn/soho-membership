@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Users, Search, Filter, Download, Eye, ChevronLeft, ChevronRight } from "lucide-react"
 import { formatDate, formatCurrency } from "@/lib/utils"
@@ -28,7 +28,7 @@ interface Pagination {
   pages: number
 }
 
-export default function MembersPage() {
+function MembersContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [members, setMembers] = useState<Member[]>([])
@@ -274,5 +274,17 @@ export default function MembersPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function MembersPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+      </div>
+    }>
+      <MembersContent />
+    </Suspense>
   )
 }

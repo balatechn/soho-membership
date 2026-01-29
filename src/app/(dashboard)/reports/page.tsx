@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { BarChart3, Download, Calendar, PieChart, TrendingUp, Users, FileText, Clock } from "lucide-react"
 import { formatCurrency, formatDate } from "@/lib/utils"
@@ -18,7 +18,7 @@ const reportTypes = [
   { id: "quarterly", name: "Quarterly Comparison", icon: Calendar },
 ]
 
-export default function ReportsPage() {
+function ReportsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [activeReport, setActiveReport] = useState(searchParams.get("type") || "summary")
@@ -408,5 +408,17 @@ export default function ReportsPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ReportsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+      </div>
+    }>
+      <ReportsContent />
+    </Suspense>
   )
 }
