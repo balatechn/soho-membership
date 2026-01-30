@@ -204,3 +204,25 @@ model ScheduledReport {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
+
+// Notification Configuration
+model NotificationConfig {
+  id            String   @id @default(cuid())
+  type          String   @unique // UPLOAD_SUCCESS, UPLOAD_ERROR, RENEWAL_REMINDER
+  emails        String   // Comma-separated email addresses
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Notification Log
+model NotificationLog {
+  id            String   @id @default(cuid())
+  type          String   // UPLOAD_SUCCESS, UPLOAD_ERROR, RENEWAL_REMINDER
+  recipients    String   // Comma-separated emails sent to
+  subject       String
+  status        String   // SENT, FAILED
+  error         String?
+  metadata      String?  // JSON string with additional details
+  sentAt        DateTime @default(now())
+}

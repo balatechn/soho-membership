@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react"
 import { useState, useEffect } from "react"
 import { Settings, Users, Bell, Plus, Edit2, Trash2, Eye, EyeOff, X, Check, RefreshCw } from "lucide-react"
 import { useRouter } from "next/navigation"
+import NotificationSettings from "@/components/notification-settings"
 
 interface User {
   id: string
@@ -339,55 +340,29 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Other Settings */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Email Configuration */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-amber-100 rounded-lg">
-              <Bell className="w-5 h-5 text-amber-600" />
-            </div>
-            <h2 className="text-lg font-semibold text-gray-900">Email Configuration</h2>
-          </div>
-          <p className="text-gray-500 text-sm mb-4">
-            Configure SMTP settings for automated emails.
-          </p>
-          <div className="space-y-3">
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-500">SMTP Host</p>
-              <p className="font-medium text-gray-900">smtp.gmail.com</p>
-            </div>
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-500">SMTP Port</p>
-              <p className="font-medium text-gray-900">587</p>
-            </div>
-            <p className="text-xs text-gray-400">
-              Update SMTP settings in environment variables.
-            </p>
-          </div>
-        </div>
+      {/* Notification Settings */}
+      <NotificationSettings />
 
-        {/* System Info */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Settings className="w-5 h-5 text-green-600" />
-            </div>
-            <h2 className="text-lg font-semibold text-gray-900">System Information</h2>
+      {/* System Info */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-green-100 rounded-lg">
+            <Settings className="w-5 h-5 text-green-600" />
           </div>
-          <div className="space-y-3">
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-500">Version</p>
-              <p className="font-medium text-gray-900">1.0.0</p>
-            </div>
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-500">Database</p>
-              <p className="font-medium text-gray-900">PostgreSQL (Supabase)</p>
-            </div>
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-500">Current User</p>
-              <p className="font-medium text-gray-900">{session?.user?.name || session?.user?.email}</p>
-            </div>
+          <h2 className="text-lg font-semibold text-gray-900">System Information</h2>
+        </div>
+        <div className="space-y-3">
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-500">Version</p>
+            <p className="font-medium text-gray-900">1.0.0</p>
+          </div>
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-500">Database</p>
+            <p className="font-medium text-gray-900">Prisma Postgres</p>
+          </div>
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-500">Current User</p>
+            <p className="font-medium text-gray-900">{session?.user?.name || session?.user?.email}</p>
           </div>
         </div>
       </div>

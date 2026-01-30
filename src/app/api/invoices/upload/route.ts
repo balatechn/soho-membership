@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import * as XLSX from "xlsx"
 import { parseExcelDate, getUploadMonth, isMaharashtra } from "@/lib/utils"
+import { sendUploadSuccessNotification, sendUploadErrorNotification } from "@/lib/email"
 
 // Helper function to normalize header names for flexible matching
 function normalizeHeader(header: string): string {
@@ -427,6 +428,31 @@ export async function POST(request: NextRequest) {
         userId: session.user.id,
       }
     })
+
+    // Send email notifications (async - don't block response)
+    const totalRevenue = processedInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0)
+    
+    if (failedCount > 0) {
+      // Send error notification
+      sendUploadErrorNotification({
+        fileName: file.name,
+        uploadMonth,
+        successCount,
+        failedCount,
+        errors: errors.map(e => ({ row: e.row, error: `${e.field}: ${e.message}` })),
+        uploadedBy: session.user.name || session.user.email
+      }).catch(err => console.error('Failed to send upload error notification:', err))
+    } else {
+      // Send success notification
+      sendUploadSuccessNotification({
+        fileName: file.name,
+        uploadMonth,
+        recordsCount: data.length,
+        successCount,
+        totalRevenue,
+        uploadedBy: session.user.name || session.user.email
+      }).catch(err => console.error('Failed to send upload success notification:', err))
+    }
 
     return NextResponse.json({
       success: true,
