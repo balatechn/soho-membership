@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', 'date-fns', 'recharts', '@tanstack/react-table'],
   },
 
+  // Turbopack configuration (Next.js 16 default)
+  turbopack: {},
+
   // Headers for caching
   async headers() {
     return [
@@ -33,19 +36,6 @@ const nextConfig: NextConfig = {
         ],
       },
     ]
-  },
-
-  // Webpack optimizations
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-      }
-    }
-    return config
   },
 };
 
