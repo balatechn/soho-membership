@@ -1,11 +1,11 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
-// Use DIRECT_URL for seeding to avoid pooler issues
+// Use non-pooling URL for seeding (Vercel Postgres)
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DIRECT_URL || process.env.DATABASE_URL
+      url: process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_PRISMA_URL
     }
   }
 })
