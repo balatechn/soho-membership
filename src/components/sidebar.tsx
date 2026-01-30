@@ -15,13 +15,15 @@ import {
   Menu,
   X,
   ChevronDown,
-  User
+  User,
+  TrendingUp
 } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "FINANCE", "MANAGEMENT"] },
+  { name: "Accrual Revenue", href: "/accrual-revenue", icon: TrendingUp, roles: ["ADMIN", "FINANCE", "MANAGEMENT"] },
   { name: "Upload", href: "/upload", icon: Upload, roles: ["ADMIN", "FINANCE"] },
   { name: "Members", href: "/members", icon: Users, roles: ["ADMIN", "FINANCE", "MANAGEMENT"] },
   { name: "Invoices", href: "/invoices", icon: FileText, roles: ["ADMIN", "FINANCE", "MANAGEMENT"] },
