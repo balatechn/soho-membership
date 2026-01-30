@@ -124,13 +124,19 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <StatCard
           title="Monthly Revenue"
           value={data.revenue.currentMonth}
           format="currency"
           change={data.revenue.change}
           changeLabel="vs last month"
+          icon={<DollarSign className="w-5 h-5" />}
+        />
+        <StatCard
+          title="Total Tax"
+          value={data.revenue.tax}
+          format="currency"
           icon={<DollarSign className="w-5 h-5" />}
         />
         <StatCard

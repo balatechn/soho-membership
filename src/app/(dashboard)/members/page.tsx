@@ -193,6 +193,7 @@ function MembersContent() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Global ID</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
@@ -200,12 +201,19 @@ function MembersContent() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Membership End</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoices</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {members.map((member) => (
                   <tr key={member.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <a
+                        href={`/members/${member.id}`}
+                        className="text-amber-600 hover:text-amber-700"
+                      >
+                        <Eye className="w-5 h-5" />
+                      </a>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {member.globalId}
                     </td>
@@ -228,14 +236,6 @@ function MembersContent() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {member._count.invoices}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <a
-                        href={`/members/${member.id}`}
-                        className="text-amber-600 hover:text-amber-700"
-                      >
-                        <Eye className="w-5 h-5" />
-                      </a>
                     </td>
                   </tr>
                 ))}
