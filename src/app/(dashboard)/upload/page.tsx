@@ -112,33 +112,53 @@ export default async function UploadPage() {
             <p className="text-gray-500 text-sm text-center py-8">No uploads yet</p>
           ) : (
             <div className="space-y-4">
-              {uploadHistory.map((log) => (
-                <div
-                  key={log.id}
-                  className="p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium text-gray-900 text-sm truncate max-w-[180px]">
-                      {log.fileName}
-                    </span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      log.status === "COMPLETED"
-                        ? "bg-green-100 text-green-700"
-                        : log.status === "COMPLETED_WITH_ERRORS"
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-red-100 text-red-700"
-                    }`}>
-                      {log.status.replace(/_/g, " ")}
-                    </span>
+              {uploadHistory.map((log) => {
+                const errors = log.errors ? JSON.parse(log.errors) : []
+                return (
+                  <div
+                    key={log.id}
+                    className="p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-gray-900 text-sm truncate max-w-[180px]">
+                        {log.fileName}
+                      </span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        log.status === "COMPLETED"
+                          ? "bg-green-100 text-green-700"
+                          : log.status === "COMPLETED_WITH_ERRORS"
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-red-100 text-red-700"
+                      }`}>
+                        {log.status.replace(/_/g, " ")}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-500 space-y-1">
+                      <p>Month: {log.uploadMonth}</p>
+                      <p>Records: {log.successCount}/{log.recordsCount}</p>
+                      <p>{formatDate(log.createdAt)}</p>
+                      <p className="truncate">By: {log.user.name || log.user.email}</p>
+                    </div>
+                    {/* Show errors if any */}
+                    {errors.length > 0 && (
+                      <details className="mt-2">
+                        <summary className="text-xs text-red-600 cursor-pointer hover:text-red-700">
+                          View {errors.length} error(s)
+                        </summary>
+                        <div className="mt-2 p-2 bg-red-50 rounded text-xs text-red-700 max-h-32 overflow-y-auto">
+                          {errors.map((err: { row?: number; field?: string; message?: string }, i: number) => (
+                            <p key={i} className="mb-1">
+                              {err.row && `Row ${err.row}: `}
+                              {err.field && `[${err.field}] `}
+                              {err.message || JSON.stringify(err)}
+                            </p>
+                          ))}
+                        </div>
+                      </details>
+                    )}
                   </div>
-                  <div className="text-xs text-gray-500 space-y-1">
-                    <p>Month: {log.uploadMonth}</p>
-                    <p>Records: {log.successCount}/{log.recordsCount}</p>
-                    <p>{formatDate(log.createdAt)}</p>
-                    <p className="truncate">By: {log.user.name || log.user.email}</p>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
