@@ -1,14 +1,8 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
-// Use non-pooling URL for seeding (Vercel Postgres)
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_PRISMA_URL
-    }
-  }
-})
+// Use DATABASE_URL for Prisma Postgres
+const prisma = new PrismaClient()
 
 async function main() {
   console.log('Seeding database...')
