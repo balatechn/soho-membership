@@ -531,6 +531,8 @@ async function getDashboardData() {
   const [
     currentMonthRevenue,
     lastMonthRevenue,
+    currentMonthAccrual,
+    lastMonthAccrual,
     memberCounts,
     upcomingRenewals,
     productDistribution,
@@ -554,6 +556,25 @@ async function getDashboardData() {
       },
       _sum: {
         totalAmount: true,
+      },
+    }),
+    // Current month accrual revenue (recognized revenue)
+    prisma.accrual.aggregate({
+      where: {
+        accrualMonth: currentUploadMonth
+      },
+      _sum: {
+        amount: true,
+        taxAmount: true,
+      },
+    }),
+    // Last month accrual revenue for comparison
+    prisma.accrual.aggregate({
+      where: {
+        accrualMonth: lastUploadMonth
+      },
+      _sum: {
+        amount: true,
       },
     }),
     // Member counts
@@ -614,6 +635,15 @@ async function getDashboardData() {
         ),
         tax: currentMonthRevenue._sum.totalTax || 0,
         invoiceCount: currentMonthRevenue._count,
+      },
+      accrualRevenue: {
+        currentMonth: currentMonthAccrual._sum.amount || 0,
+        lastMonth: lastMonthAccrual._sum.amount || 0,
+        change: calculateChange(
+          currentMonthAccrual._sum.amount || 0,
+          lastMonthAccrual._sum.amount || 0
+        ),
+        tax: currentMonthAccrual._sum.taxAmount || 0,
       },
       members: {
         total: totalMembers,

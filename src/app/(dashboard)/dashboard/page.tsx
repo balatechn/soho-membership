@@ -14,6 +14,12 @@ interface DashboardData {
     tax: number
     invoiceCount: number
   }
+  accrualRevenue: {
+    currentMonth: number
+    lastMonth: number
+    change: number
+    tax: number
+  }
   members: {
     total: number
     active: number
@@ -128,9 +134,11 @@ export default function DashboardPage() {
           icon={<DollarSign className="w-5 h-5" />}
         />
         <StatCard
-          title="Tax Collected"
-          value={data.revenue.tax}
+          title="Accrual Revenue"
+          value={data.accrualRevenue?.currentMonth || 0}
           format="currency"
+          change={data.accrualRevenue?.change || 0}
+          changeLabel="vs last month"
           icon={<TrendingUp className="w-5 h-5" />}
         />
         <StatCard
