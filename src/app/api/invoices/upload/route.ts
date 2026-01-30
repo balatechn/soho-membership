@@ -106,9 +106,8 @@ export async function POST(request: NextRequest) {
     const processedInvoices: ProcessedInvoice[] = []
     const existingInvoiceNos: Set<string> = new Set()
 
-    // Check for existing invoices in this upload month
+    // Check for existing invoices globally (not just this upload month)
     const existingInvoices = await prisma.invoice.findMany({
-      where: { uploadMonth },
       select: { invoiceNo: true }
     })
     existingInvoices.forEach(inv => existingInvoiceNos.add(inv.invoiceNo))
@@ -183,7 +182,7 @@ export async function POST(request: NextRequest) {
 
       // Check for duplicates in database
       if (existingInvoiceNos.has(invoiceNo)) {
-        errors.push({ row: rowNum, field: "Invoice No", message: `Invoice ${invoiceNo} already exists for ${uploadMonth}` })
+        errors.push({ row: rowNum, field: "Invoice No", message: `Invoice ${invoiceNo} already exists in the system` })
         continue
       }
 
