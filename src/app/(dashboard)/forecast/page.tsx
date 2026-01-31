@@ -309,7 +309,7 @@ export default function ForecastPage() {
                   tick={{ fontSize: 12 }}
                 />
                 <Tooltip 
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value) => formatCurrency(Number(value))}
                   labelFormatter={(label) => `Month: ${label}`}
                 />
                 <Bar dataKey="beforeTax" name="Before Tax" fill="#94a3b8" stackId="a" />
@@ -339,13 +339,13 @@ export default function ForecastPage() {
                   paddingAngle={2}
                   dataKey="revenue"
                   nameKey="product"
-                  label={({ product, percent }) => `${(percent * 100).toFixed(0)}%`}
+                  label={({ percent }) => `${((percent || 0) * 100).toFixed(0)}%`}
                 >
                   {data.productBreakdown.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
