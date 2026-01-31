@@ -4,9 +4,9 @@ import type { NextRequestWithAuth } from "next-auth/middleware"
 
 // Role-based access control configuration
 const ROLE_PERMISSIONS: Record<string, string[]> = {
-  ADMIN: ['/dashboard', '/upload', '/members', '/invoices', '/reports', '/email', '/settings'],
-  FINANCE: ['/dashboard', '/upload', '/members', '/invoices', '/reports', '/email'],
-  MANAGEMENT: ['/dashboard', '/members', '/invoices', '/reports'],
+  ADMIN: ['/dashboard', '/upload', '/members', '/invoices', '/reports', '/email', '/settings', '/accrual-revenue', '/forecast', '/support'],
+  FINANCE: ['/dashboard', '/upload', '/members', '/invoices', '/reports', '/email', '/accrual-revenue', '/support'],
+  MANAGEMENT: ['/dashboard', '/members', '/invoices', '/reports', '/accrual-revenue', '/forecast', '/support'],
 }
 
 function hasAccess(role: string | undefined, path: string): boolean {
@@ -65,5 +65,8 @@ export const config = {
     "/reports/:path*",
     "/email/:path*",
     "/settings/:path*",
+    "/accrual-revenue/:path*",
+    "/forecast/:path*",
+    "/support/:path*",
   ],
 }
