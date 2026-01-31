@@ -10,6 +10,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // Only ADMIN and MANAGEMENT can access forecast
+    if (!["ADMIN", "MANAGEMENT"].includes(session.user.role)) {
+      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 })
+    }
+
     const { searchParams } = new URL(request.url)
     const months = parseInt(searchParams.get("months") || "3")
     const product = searchParams.get("product") || ""
