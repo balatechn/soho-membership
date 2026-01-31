@@ -13,14 +13,22 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const reportType = searchParams.get("type") || "summary"
-    const month = searchParams.get("month") // YYYY-MM format
+    const month = searchParams.get("month") // YYYY-MM format (legacy single month)
+    const fromMonth = searchParams.get("fromMonth") // YYYY-MM format (date range start)
+    const toMonth = searchParams.get("toMonth") // YYYY-MM format (date range end)
     const year = searchParams.get("year")
     const quarter = searchParams.get("quarter") // Q1, Q2, Q3, Q4
 
     let startDate: Date
     let endDate: Date
 
-    if (month) {
+    // Date range filter (fromMonth - toMonth)
+    if (fromMonth && toMonth) {
+      const [fromY, fromM] = fromMonth.split("-").map(Number)
+      const [toY, toM] = toMonth.split("-").map(Number)
+      startDate = new Date(fromY, fromM - 1, 1)
+      endDate = endOfMonth(new Date(toY, toM - 1, 1))
+    } else if (month) {
       const [y, m] = month.split("-").map(Number)
       startDate = new Date(y, m - 1, 1)
       endDate = endOfMonth(startDate)
@@ -48,11 +56,16 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // For accrual report, pass both from and to months
+    const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
+    const accrualFromMonth = fromMonth || month || currentMonth
+    const accrualToMonth = toMonth || fromMonth || month || currentMonth
+
     switch (reportType) {
       case "summary":
         return await getRevenueSummary(dateFilter)
       case "accrual":
-        return await getAccrualReport(month || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`)
+        return await getAccrualReport(accrualFromMonth, accrualToMonth)
       case "product":
         return await getProductWiseRevenue(dateFilter)
       case "membership-type":
@@ -84,11 +97,30 @@ export async function GET(request: NextRequest) {
 }
 
 // Accrual Report - Shows monthly revenue recognized from accruals
-async function getAccrualReport(month: string) {
-  // Get accruals for the specified month
+async function getAccrualReport(fromMonth: string, toMonth: string) {
+  // Generate list of months between fromMonth and toMonth
+  const months: string[] = []
+  const [fromY, fromM] = fromMonth.split('-').map(Number)
+  const [toY, toM] = toMonth.split('-').map(Number)
+  
+  let currentY = fromY
+  let currentM = fromM
+  
+  while (currentY < toY || (currentY === toY && currentM <= toM)) {
+    months.push(`${currentY}-${String(currentM).padStart(2, '0')}`)
+    currentM++
+    if (currentM > 12) {
+      currentM = 1
+      currentY++
+    }
+  }
+
+  // Get accruals for all months in range
   const accruals = await prisma.accrual.findMany({
     where: {
-      accrualMonth: month,
+      accrualMonth: {
+        in: months,
+      },
     },
     include: {
       invoice: {
@@ -113,16 +145,15 @@ async function getAccrualReport(month: string) {
   const totalAccrued = accruals.reduce((sum: number, a) => sum + a.amount, 0)
   const totalTax = accruals.reduce((sum: number, a) => sum + a.taxAmount, 0)
 
-  // Get comparison with actual invoices in that month
-  const [y, m] = month.split('-').map(Number)
-  const monthStart = new Date(y, m - 1, 1)
-  const monthEnd = new Date(y, m, 0, 23, 59, 59)
+  // Get comparison with actual invoices in the date range
+  const rangeStart = new Date(fromY, fromM - 1, 1)
+  const rangeEnd = new Date(toY, toM, 0, 23, 59, 59)
 
   const actualInvoices = await prisma.invoice.aggregate({
     where: {
       invoiceDate: {
-        gte: monthStart,
-        lte: monthEnd,
+        gte: rangeStart,
+        lte: rangeEnd,
       }
     },
     _sum: {
@@ -145,21 +176,40 @@ async function getAccrualReport(month: string) {
     return acc
   }, {} as ProductAccum)
 
+  // Group by month for monthly breakdown
+  type MonthAccum = Record<string, { amount: number; taxAmount: number; count: number }>
+  const byMonth = accruals.reduce((acc: MonthAccum, a) => {
+    if (!acc[a.accrualMonth]) {
+      acc[a.accrualMonth] = { amount: 0, taxAmount: 0, count: 0 }
+    }
+    acc[a.accrualMonth].amount += a.amount
+    acc[a.accrualMonth].taxAmount += a.taxAmount
+    acc[a.accrualMonth].count += 1
+    return acc
+  }, {} as MonthAccum)
+
+  // Format report title
+  const isSingleMonth = fromMonth === toMonth
+  const reportTitle = isSingleMonth 
+    ? "Monthly Accrual Report" 
+    : `Accrual Report (${fromMonth} to ${toMonth})`
+
   return NextResponse.json({
-    report: "Monthly Accrual Report",
-    month,
+    report: reportTitle,
+    fromMonth,
+    toMonth,
     data: {
       totals: {
         accruedRevenue: Math.round(totalAccrued * 100) / 100,
         accruedTax: Math.round(totalTax * 100) / 100,
         invoicedRevenue: actualInvoices._sum.totalAmount || 0,
       },
-      monthlyAccruals: [{
+      monthlyAccruals: months.map(month => ({
         month,
-        amount: Math.round(totalAccrued * 100) / 100,
-        taxAmount: Math.round(totalTax * 100) / 100,
-        count: accruals.length,
-      }],
+        amount: Math.round((byMonth[month]?.amount || 0) * 100) / 100,
+        taxAmount: Math.round((byMonth[month]?.taxAmount || 0) * 100) / 100,
+        count: byMonth[month]?.count || 0,
+      })),
       byProduct: Object.entries(byProduct).map(([product, data]: [string, { amount: number; taxAmount: number; count: number }]) => ({
         product,
         amount: Math.round(data.amount * 100) / 100,
@@ -174,6 +224,7 @@ async function getAccrualReport(month: string) {
         originalAmount: a.invoice.totalAmount,
         calculationMonths: a.invoice.calculationMonth,
         monthlyAccrual: Math.round(a.amount * 100) / 100,
+        accrualMonth: a.accrualMonth,
       }))
     }
   })

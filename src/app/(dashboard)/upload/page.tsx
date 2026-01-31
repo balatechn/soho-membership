@@ -1,23 +1,144 @@
-import { ExcelUploader } from "@/components/excel-uploader"
-import { FileSpreadsheet, History, Download } from "lucide-react"
-import { prisma } from "@/lib/prisma"
-import { formatDate } from "@/lib/utils"
+"use client"
 
-async function getUploadHistory() {
-  const logs = await prisma.uploadLog.findMany({
-    include: {
-      user: {
-        select: { name: true, email: true }
-      }
-    },
-    orderBy: { createdAt: "desc" },
-    take: 10,
-  })
-  return logs
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
+import { ExcelUploader } from "@/components/excel-uploader"
+import { 
+  FileSpreadsheet, 
+  History, 
+  Download, 
+  Trash2, 
+  AlertTriangle, 
+  X, 
+  Calendar,
+  FileText,
+  User,
+  CheckCircle,
+  XCircle,
+  AlertCircle
+} from "lucide-react"
+import toast from "react-hot-toast"
+
+interface UploadLog {
+  id: string
+  fileName: string
+  uploadMonth: string
+  recordsCount: number
+  successCount: number
+  status: string
+  errors: string | null
+  createdAt: string
+  user: {
+    id: string
+    name: string | null
+    email: string
+  }
+  invoiceCount: number
+  accrualCount: number
 }
 
-export default async function UploadPage() {
-  const uploadHistory = await getUploadHistory()
+interface Pagination {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
+export default function UploadPage() {
+  const { data: session } = useSession()
+  const [activeTab, setActiveTab] = useState<"upload" | "history">("upload")
+  const [uploads, setUploads] = useState<UploadLog[]>([])
+  const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 20, total: 0, totalPages: 0 })
+  const [loading, setLoading] = useState(false)
+  const [deleteModal, setDeleteModal] = useState<{ show: boolean; upload: UploadLog | null }>({ show: false, upload: null })
+  const [deleting, setDeleting] = useState(false)
+
+  const isAdmin = session?.user?.role === "ADMIN"
+
+  useEffect(() => {
+    if (activeTab === "history") {
+      fetchUploads()
+    }
+  }, [activeTab, pagination.page])
+
+  const fetchUploads = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/uploads?page=${pagination.page}&limit=${pagination.limit}`)
+      const data = await response.json()
+      if (response.ok) {
+        setUploads(data.uploads)
+        setPagination(data.pagination)
+      } else {
+        toast.error(data.error || "Failed to load upload history")
+      }
+    } catch (error) {
+      console.error("Failed to fetch uploads:", error)
+      toast.error("Failed to load upload history")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteModal.upload) return
+    
+    setDeleting(true)
+    try {
+      const response = await fetch("/api/uploads", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uploadId: deleteModal.upload.id })
+      })
+
+      const data = await response.json()
+      
+      if (response.ok) {
+        toast.success(`Deleted: ${data.deleted.invoices} invoices, ${data.deleted.accruals} accruals`)
+        setDeleteModal({ show: false, upload: null })
+        fetchUploads()
+      } else {
+        toast.error(data.error || "Failed to delete upload")
+      }
+    } catch (error) {
+      console.error("Failed to delete upload:", error)
+      toast.error("Failed to delete upload")
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    })
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "COMPLETED":
+        return <CheckCircle className="w-4 h-4 text-green-600" />
+      case "COMPLETED_WITH_ERRORS":
+        return <AlertCircle className="w-4 h-4 text-amber-600" />
+      default:
+        return <XCircle className="w-4 h-4 text-red-600" />
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "COMPLETED":
+        return "bg-green-100 text-green-700"
+      case "COMPLETED_WITH_ERRORS":
+        return "bg-amber-100 text-amber-700"
+      default:
+        return "bg-red-100 text-red-700"
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -37,132 +158,302 @@ export default async function UploadPage() {
         </a>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Upload Section */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-amber-100 rounded-lg">
-                <FileSpreadsheet className="w-6 h-6 text-amber-600" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Monthly Invoice Upload</h2>
-                <p className="text-sm text-gray-500">Upload Excel file with invoice data</p>
-              </div>
-            </div>
-
-            <ExcelUploader />
-
-            {/* Field Mapping Reference */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <h3 className="font-medium text-gray-900 mb-3">Expected Excel Columns</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                {[
-                  "Invoice No.*",
-                  "Invoice Date*",
-                  "Global ID*",
-                  "Name*",
-                  "State",
-                  "Email Id",
-                  "Registration",
-                  "Membership",
-                  "Month Total*",
-                  "CGST 9%",
-                  "SGST 9%",
-                  "CGST 18%",
-                  "SGST 18%",
-                  "Total Tax",
-                  "Description",
-                  "Membership Start Date",
-                  "Membership End Date",
-                  "Payment Start Date",
-                  "Payment End Date",
-                  "Renewal/Quarterly",
-                  "Product",
-                  "Months",
-                  "Calculations of Month",
-                ].map((col) => (
-                  <span
-                    key={col}
-                    className={`px-2 py-1 rounded ${
-                      col.includes("*")
-                        ? "bg-amber-100 text-amber-800 font-medium"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {col}
-                  </span>
-                ))}
-              </div>
-              <p className="text-xs text-gray-500 mt-2">* Required fields</p>
-            </div>
-          </div>
+      {/* Tabs - Only show History tab to Admin */}
+      {isAdmin && (
+        <div className="flex gap-2 border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab("upload")}
+            className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
+              activeTab === "upload"
+                ? "border-amber-600 text-amber-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            <FileSpreadsheet className="w-4 h-4 inline-block mr-2" />
+            Upload
+          </button>
+          <button
+            onClick={() => setActiveTab("history")}
+            className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
+              activeTab === "history"
+                ? "border-amber-600 text-amber-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            <History className="w-4 h-4 inline-block mr-2" />
+            Upload History
+          </button>
         </div>
+      )}
 
-        {/* Upload History */}
+      {/* Upload Tab Content */}
+      {activeTab === "upload" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-gray-100 rounded-lg">
-              <History className="w-5 h-5 text-gray-600" />
+            <div className="p-2 bg-amber-100 rounded-lg">
+              <FileSpreadsheet className="w-6 h-6 text-amber-600" />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900">Upload History</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Monthly Invoice Upload</h2>
+              <p className="text-sm text-gray-500">Upload Excel file with invoice data</p>
+            </div>
           </div>
 
-          {uploadHistory.length === 0 ? (
-            <p className="text-gray-500 text-sm text-center py-8">No uploads yet</p>
-          ) : (
-            <div className="space-y-4">
-              {uploadHistory.map((log) => {
-                const errors = log.errors ? JSON.parse(log.errors) : []
-                return (
-                  <div
-                    key={log.id}
-                    className="p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-gray-900 text-sm truncate max-w-[180px]">
-                        {log.fileName}
-                      </span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        log.status === "COMPLETED"
-                          ? "bg-green-100 text-green-700"
-                          : log.status === "COMPLETED_WITH_ERRORS"
-                          ? "bg-amber-100 text-amber-700"
-                          : "bg-red-100 text-red-700"
-                      }`}>
-                        {log.status.replace(/_/g, " ")}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-500 space-y-1">
-                      <p>Month: {log.uploadMonth}</p>
-                      <p>Records: {log.successCount}/{log.recordsCount}</p>
-                      <p>{formatDate(log.createdAt)}</p>
-                      <p className="truncate">By: {log.user.name || log.user.email}</p>
-                    </div>
-                    {/* Show errors if any */}
-                    {errors.length > 0 && (
-                      <details className="mt-2">
-                        <summary className="text-xs text-red-600 cursor-pointer hover:text-red-700">
-                          View {errors.length} error(s)
-                        </summary>
-                        <div className="mt-2 p-2 bg-red-50 rounded text-xs text-red-700 max-h-32 overflow-y-auto">
-                          {errors.map((err: { row?: number; field?: string; message?: string }, i: number) => (
-                            <p key={i} className="mb-1">
-                              {err.row && `Row ${err.row}: `}
-                              {err.field && `[${err.field}] `}
-                              {err.message || JSON.stringify(err)}
-                            </p>
-                          ))}
-                        </div>
-                      </details>
-                    )}
-                  </div>
-                )
-              })}
+          <ExcelUploader />
+
+          {/* Field Mapping Reference */}
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <h3 className="font-medium text-gray-900 mb-3">Expected Excel Columns</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 text-sm">
+              {[
+                "Invoice No.*",
+                "Invoice Date*",
+                "Global ID*",
+                "Name*",
+                "State",
+                "Email Id",
+                "Registration",
+                "Membership",
+                "Month Total*",
+                "CGST 9%",
+                "SGST 9%",
+                "CGST 18%",
+                "SGST 18%",
+                "Total Tax",
+                "Description",
+                "Membership Start Date",
+                "Membership End Date",
+                "Payment Start Date",
+                "Payment End Date",
+                "Renewal/Quarterly",
+                "Product",
+                "Months",
+                "Calculations of Month",
+              ].map((col) => (
+                <span
+                  key={col}
+                  className={`px-2 py-1 rounded ${
+                    col.includes("*")
+                      ? "bg-amber-100 text-amber-800 font-medium"
+                      : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {col}
+                </span>
+              ))}
             </div>
+            <p className="text-xs text-gray-500 mt-2">* Required fields</p>
+          </div>
+        </div>
+      )}
+
+      {/* Upload History Tab Content (Admin Only) */}
+      {activeTab === "history" && isAdmin && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div className="p-6 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gray-100 rounded-lg">
+                  <History className="w-5 h-5 text-gray-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Upload History</h2>
+                  <p className="text-sm text-gray-500">Manage past uploads - Delete to remove invoices and accruals</p>
+                </div>
+              </div>
+              <span className="text-sm text-gray-500">{pagination.total} total uploads</span>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="p-12 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600 mx-auto"></div>
+            </div>
+          ) : uploads.length === 0 ? (
+            <div className="p-12 text-center text-gray-500">
+              <History className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p>No uploads found</p>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">File</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Month</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Records</th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Invoices</th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Accruals</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Uploaded By</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Date</th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {uploads.map((upload) => (
+                      <tr key={upload.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm font-medium text-gray-900 max-w-[200px] truncate">
+                              {upload.fileName}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm text-gray-800">{upload.uploadMonth}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full ${getStatusColor(upload.status)}`}>
+                            {getStatusIcon(upload.status)}
+                            {upload.status.replace(/_/g, " ")}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="text-sm text-gray-800">
+                            {upload.successCount}/{upload.recordsCount}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="text-sm font-medium text-gray-900">{upload.invoiceCount}</span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="text-sm font-medium text-gray-900">{upload.accrualCount}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm text-gray-800 truncate max-w-[120px]">
+                              {upload.user.name || upload.user.email}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-gray-600">{formatDate(upload.createdAt)}</span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <button
+                            onClick={() => setDeleteModal({ show: true, upload })}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete this upload"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {pagination.totalPages > 1 && (
+                <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+                  <span className="text-sm text-gray-500">
+                    Page {pagination.page} of {pagination.totalPages}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setPagination(p => ({ ...p, page: p.page - 1 }))}
+                      disabled={pagination.page === 1}
+                      className="px-3 py-1 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => setPagination(p => ({ ...p, page: p.page + 1 }))}
+                      disabled={pagination.page === pagination.totalPages}
+                      className="px-3 py-1 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
-      </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.show && deleteModal.upload && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Delete Upload</h2>
+                  <p className="text-sm text-gray-500">This action cannot be undone</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <p className="text-gray-700">
+                Are you sure you want to delete this upload? This will permanently remove:
+              </p>
+              
+              <div className="bg-red-50 p-4 rounded-lg space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-700">File:</span>
+                  <span className="font-medium text-gray-900 truncate max-w-[200px]">{deleteModal.upload.fileName}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-700">Upload Month:</span>
+                  <span className="font-medium text-gray-900">{deleteModal.upload.uploadMonth}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-red-700">Invoices to delete:</span>
+                  <span className="font-bold text-red-700">{deleteModal.upload.invoiceCount}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-red-700">Accruals to delete:</span>
+                  <span className="font-bold text-red-700">{deleteModal.upload.accrualCount}</span>
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-500">
+                Note: Members will not be deleted even if they have no other invoices.
+              </p>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteModal({ show: false, upload: null })}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete Upload
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

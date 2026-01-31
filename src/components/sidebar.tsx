@@ -16,7 +16,8 @@ import {
   X,
   ChevronDown,
   User,
-  TrendingUp
+  TrendingUp,
+  MessageCircle
 } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
@@ -29,6 +30,7 @@ const navigation = [
   { name: "Invoices", href: "/invoices", icon: FileText, roles: ["ADMIN", "FINANCE", "MANAGEMENT"] },
   { name: "Reports", href: "/reports", icon: BarChart3, roles: ["ADMIN", "FINANCE", "MANAGEMENT"] },
   { name: "Email", href: "/email", icon: Mail, roles: ["ADMIN", "FINANCE"] },
+  { name: "Support", href: "/support", icon: MessageCircle, roles: ["ADMIN", "FINANCE", "MANAGEMENT"] },
   { name: "Settings", href: "/settings", icon: Settings, roles: ["ADMIN"] },
 ]
 

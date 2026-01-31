@@ -276,6 +276,20 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Create upload log first to link invoices to it
+    const uploadLog = await prisma.uploadLog.create({
+      data: {
+        fileName: file.name,
+        uploadMonth,
+        recordsCount: data.length,
+        successCount: 0, // Will update later
+        failedCount: 0,  // Will update later
+        userId: session.user.id,
+        status: "PENDING",
+        errors: null,
+      }
+    })
+
     // Process each invoice and update/create members
     let successCount = 0
     let failedCount = 0
@@ -359,6 +373,7 @@ export async function POST(request: NextRequest) {
             calculationMonth: invoice.calculationMonth,
             billingCycle: invoice.billingCycle,
             uploadMonth,
+            uploadLogId: uploadLog.id, // Link to upload batch
           }
         })
 
@@ -400,15 +415,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create upload log
-    await prisma.uploadLog.create({
+    // Update upload log with final counts
+    await prisma.uploadLog.update({
+      where: { id: uploadLog.id },
       data: {
-        fileName: file.name,
-        uploadMonth,
-        recordsCount: data.length,
         successCount,
         failedCount,
-        userId: session.user.id,
         status: failedCount === 0 ? "COMPLETED" : "COMPLETED_WITH_ERRORS",
         errors: errors.length > 0 ? JSON.stringify(errors) : null,
       }

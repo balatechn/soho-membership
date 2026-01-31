@@ -188,10 +188,10 @@ export default function AccrualRevenuePage() {
             <select
               value={year}
               onChange={(e) => setYear(Number(e.target.value))}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm"
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-900 font-medium bg-white"
             >
               {[2026, 2025, 2024].map((y) => (
-                <option key={y} value={y}>{y}</option>
+                <option key={y} value={y} className="text-gray-900">{y}</option>
               ))}
             </select>
           </div>
@@ -217,7 +217,7 @@ export default function AccrualRevenuePage() {
                     style={{ height: `${Math.max(height, 2)}%`, minHeight: '4px' }}
                   />
                 </div>
-                <span className="text-xs text-gray-500">{data.month}</span>
+                <span className="text-xs text-gray-700 font-medium">{data.month}</span>
               </div>
             )
           })}
@@ -240,11 +240,11 @@ export default function AccrualRevenuePage() {
         {/* Filters */}
         <div className="flex flex-wrap gap-4 mb-6">
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-500">Month:</label>
+            <label className="text-sm text-gray-700 font-medium">Month:</label>
             <select
               value={filterMonth}
               onChange={(e) => setFilterMonth(e.target.value)}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm"
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white"
             >
               <option value="All">All</option>
               {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map(m => (
@@ -253,11 +253,11 @@ export default function AccrualRevenuePage() {
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-500">Tenure:</label>
+            <label className="text-sm text-gray-700 font-medium">Tenure:</label>
             <select
               value={filterTenure}
               onChange={(e) => setFilterTenure(e.target.value)}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm"
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white"
             >
               <option value="All">All</option>
               <option value="Quarterly">Quarterly</option>
@@ -271,8 +271,8 @@ export default function AccrualRevenuePage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500" rowSpan={2}>Months</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-gray-500" rowSpan={2}>Total Accrual Revenue</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-800" rowSpan={2}>Months</th>
+                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-800" rowSpan={2}>Total Accrual Revenue</th>
                 <th className="text-center py-2 px-4 text-sm font-medium text-amber-700 bg-amber-50" colSpan={2}>Quarterly Tenure</th>
                 <th className="text-center py-2 px-4 text-sm font-medium text-blue-700 bg-blue-50" colSpan={2}>Intake Tenure</th>
                 <th className="text-center py-2 px-4 text-sm font-medium text-green-700 bg-green-50" colSpan={2}>Renewal Tenure</th>
@@ -293,12 +293,12 @@ export default function AccrualRevenuePage() {
                 <tr key={row.month} className={`border-b border-gray-100 ${index % 2 === 0 ? 'bg-gray-50' : ''}`}>
                   <td className="py-3 px-4 text-sm font-medium text-gray-900">{row.month}</td>
                   <td className="py-3 px-4 text-sm text-right text-gray-900 font-medium">{formatCurrency(row.totalAccrual)}</td>
-                  <td className="py-3 px-2 text-sm text-right text-gray-600">{formatCurrency(row.quarterlyTenure.oneYear)}</td>
-                  <td className="py-3 px-2 text-sm text-right text-gray-600">{formatCurrency(row.quarterlyTenure.fiveYear)}</td>
-                  <td className="py-3 px-2 text-sm text-right text-gray-600">{formatCurrency(row.intakeTenure.oneYear)}</td>
-                  <td className="py-3 px-2 text-sm text-right text-gray-600">{formatCurrency(row.intakeTenure.fiveYear)}</td>
-                  <td className="py-3 px-2 text-sm text-right text-gray-600">{formatCurrency(row.renewalTenure.oneYear)}</td>
-                  <td className="py-3 px-2 text-sm text-right text-gray-600">{formatCurrency(row.renewalTenure.fiveYear)}</td>
+                  <td className="py-3 px-2 text-sm text-right text-gray-800">{formatCurrency(row.quarterlyTenure.oneYear)}</td>
+                  <td className="py-3 px-2 text-sm text-right text-gray-800">{formatCurrency(row.quarterlyTenure.fiveYear)}</td>
+                  <td className="py-3 px-2 text-sm text-right text-gray-800">{formatCurrency(row.intakeTenure.oneYear)}</td>
+                  <td className="py-3 px-2 text-sm text-right text-gray-800">{formatCurrency(row.intakeTenure.fiveYear)}</td>
+                  <td className="py-3 px-2 text-sm text-right text-gray-800">{formatCurrency(row.renewalTenure.oneYear)}</td>
+                  <td className="py-3 px-2 text-sm text-right text-gray-800">{formatCurrency(row.renewalTenure.fiveYear)}</td>
                 </tr>
               ))}
               {/* Total Row */}

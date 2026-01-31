@@ -25,7 +25,11 @@ function ReportsContent() {
   const [activeReport, setActiveReport] = useState(searchParams.get("type") || "summary")
   const [reportData, setReportData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [month, setMonth] = useState(() => {
+  const [fromMonth, setFromMonth] = useState(() => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+  })
+  const [toMonth, setToMonth] = useState(() => {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
   })
@@ -33,7 +37,7 @@ function ReportsContent() {
 
   useEffect(() => {
     fetchReport()
-  }, [activeReport, month, year])
+  }, [activeReport, fromMonth, toMonth, year])
 
   const fetchReport = async () => {
     setLoading(true)
@@ -43,7 +47,8 @@ function ReportsContent() {
       if (activeReport === "quarterly") {
         params.set("year", year.toString())
       } else if (!["member-status", "upcoming-renewals"].includes(activeReport)) {
-        params.set("month", month)
+        params.set("fromMonth", fromMonth)
+        params.set("toMonth", toMonth)
       }
 
       const response = await fetch(`/api/reports?${params}`)
@@ -73,7 +78,8 @@ function ReportsContent() {
           reportType: reportType === "summary" ? "revenue-summary" : 
                       reportType === "state-tax" ? "tax-report" :
                       reportType === "upcoming-renewals" ? "renewals" : "invoices",
-          month,
+          fromMonth,
+          toMonth,
         }),
       })
 
@@ -83,7 +89,7 @@ function ReportsContent() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `${reportType}_${month}.xlsx`
+      a.download = `${reportType}_${fromMonth}_to_${toMonth}.xlsx`
       a.click()
       window.URL.revokeObjectURL(url)
       toast.success("Report exported")
@@ -148,35 +154,59 @@ function ReportsContent() {
         <div className="lg:col-span-3">
           {/* Filters */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
               {activeReport === "quarterly" ? (
                 <div className="flex items-center gap-2">
                   <label className="text-sm font-medium text-gray-700">Financial Year:</label>
                   <select
                     value={year}
                     onChange={(e) => setYear(parseInt(e.target.value))}
-                    className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900 font-medium bg-white"
                   >
                     {yearOptions.map((y) => (
-                      <option key={y} value={y}>FY {y}-{(y + 1).toString().slice(-2)}</option>
+                      <option key={y} value={y} className="text-gray-900">FY {y}-{(y + 1).toString().slice(-2)}</option>
                     ))}
                   </select>
                 </div>
               ) : !["member-status", "upcoming-renewals"].includes(activeReport) && (
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-medium text-gray-700">Month:</label>
-                  <select
-                    value={month}
-                    onChange={(e) => setMonth(e.target.value)}
-                    className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                  >
-                    {monthOptions.map((m) => (
-                      <option key={m} value={m}>
-                        {new Date(m + "-01").toLocaleDateString("en-IN", { month: "long", year: "numeric" })}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium text-gray-700">From:</label>
+                    <select
+                      value={fromMonth}
+                      onChange={(e) => {
+                        setFromMonth(e.target.value)
+                        // If fromMonth is after toMonth, update toMonth
+                        if (e.target.value > toMonth) {
+                          setToMonth(e.target.value)
+                        }
+                      }}
+                      className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900 font-medium bg-white"
+                    >
+                      {monthOptions.map((m) => (
+                        <option key={m} value={m} className="text-gray-900">
+                          {new Date(m + "-01").toLocaleDateString("en-IN", { month: "long", year: "numeric" })}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium text-gray-700">To:</label>
+                    <select
+                      value={toMonth}
+                      onChange={(e) => setToMonth(e.target.value)}
+                      className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900 font-medium bg-white"
+                    >
+                      {monthOptions
+                        .filter((m) => m >= fromMonth)
+                        .map((m) => (
+                          <option key={m} value={m} className="text-gray-900">
+                            {new Date(m + "-01").toLocaleDateString("en-IN", { month: "long", year: "numeric" })}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -236,13 +266,13 @@ function ReportsContent() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                           {activeReport === "product" ? "Product" : activeReport === "membership-type" ? "Type" : "State"}
                         </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Tax</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Net</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Count</th>
+                        <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Revenue</th>
+                        <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Tax</th>
+                        <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Net</th>
+                        <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Count</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -251,10 +281,10 @@ function ReportsContent() {
                           <td className="px-6 py-4 text-sm font-medium text-gray-900">
                             {row.product || row.membershipType || row.state || "Unknown"}
                           </td>
-                          <td className="px-6 py-4 text-sm text-right">{formatCurrency(row.totalRevenue || row.totalAmount || 0)}</td>
-                          <td className="px-6 py-4 text-sm text-right">{formatCurrency(row.totalTax || 0)}</td>
-                          <td className="px-6 py-4 text-sm text-right">{formatCurrency(row.netRevenue || 0)}</td>
-                          <td className="px-6 py-4 text-sm text-right">{row.count}</td>
+                          <td className="px-6 py-4 text-sm text-right text-gray-800">{formatCurrency(row.totalRevenue || row.totalAmount || 0)}</td>
+                          <td className="px-6 py-4 text-sm text-right text-gray-800">{formatCurrency(row.totalTax || 0)}</td>
+                          <td className="px-6 py-4 text-sm text-right text-gray-800">{formatCurrency(row.netRevenue || 0)}</td>
+                          <td className="px-6 py-4 text-sm text-right text-gray-800">{row.count}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -335,26 +365,26 @@ function ReportsContent() {
 
                   {reportData.data.next30Days?.members?.length > 0 ? (
                     <div>
-                      <h3 className="font-medium text-gray-900 mb-3">Members Expiring in Next 30 Days</h3>
+                      <h3 className="font-semibold text-gray-900 mb-3">Members Expiring in Next 30 Days</h3>
                       <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200 text-sm">
                           <thead className="bg-gray-50">
                             <tr>
-                              <th className="px-4 py-3 text-left font-medium text-gray-500">Global ID</th>
-                              <th className="px-4 py-3 text-left font-medium text-gray-500">Name</th>
-                              <th className="px-4 py-3 text-left font-medium text-gray-500">Email</th>
-                              <th className="px-4 py-3 text-left font-medium text-gray-500">Product</th>
-                              <th className="px-4 py-3 text-left font-medium text-gray-500">Expires</th>
+                              <th className="px-4 py-3 text-left font-semibold text-gray-700">Global ID</th>
+                              <th className="px-4 py-3 text-left font-semibold text-gray-700">Name</th>
+                              <th className="px-4 py-3 text-left font-semibold text-gray-700">Email</th>
+                              <th className="px-4 py-3 text-left font-semibold text-gray-700">Product</th>
+                              <th className="px-4 py-3 text-left font-semibold text-gray-700">Expires</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200">
                             {reportData.data.next30Days.members.slice(0, 10).map((member: any) => (
                               <tr key={member.id}>
-                                <td className="px-4 py-3">{member.globalId}</td>
-                                <td className="px-4 py-3">{member.name}</td>
-                                <td className="px-4 py-3">{member.email || "-"}</td>
-                                <td className="px-4 py-3">{member.product || "-"}</td>
-                                <td className="px-4 py-3">{formatDate(member.membershipEndDate)}</td>
+                                <td className="px-4 py-3 text-gray-900">{member.globalId}</td>
+                                <td className="px-4 py-3 text-gray-900">{member.name}</td>
+                                <td className="px-4 py-3 text-gray-800">{member.email || "-"}</td>
+                                <td className="px-4 py-3 text-gray-800">{member.product || "-"}</td>
+                                <td className="px-4 py-3 text-gray-800">{formatDate(member.membershipEndDate)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -370,29 +400,29 @@ function ReportsContent() {
               {/* Quarterly Comparison */}
               {activeReport === "quarterly" && Array.isArray(reportData.data) && (
                 <div className="space-y-6">
-                  <p className="text-gray-600">{reportData.financialYear}</p>
+                  <p className="text-gray-700 font-medium">{reportData.financialYear}</p>
                   <QuarterlyChart data={reportData.data} />
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quarter</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Tax</th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Net Revenue</th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Invoices</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Quarter</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Period</th>
+                          <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Revenue</th>
+                          <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Tax</th>
+                          <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Net Revenue</th>
+                          <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Invoices</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         {reportData.data.map((q: any) => (
                           <tr key={q.quarter} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 font-medium">{q.quarter}</td>
-                            <td className="px-6 py-4 text-sm text-gray-500">{q.period}</td>
-                            <td className="px-6 py-4 text-right">{formatCurrency(q.revenue)}</td>
-                            <td className="px-6 py-4 text-right">{formatCurrency(q.tax)}</td>
-                            <td className="px-6 py-4 text-right font-semibold">{formatCurrency(q.netRevenue)}</td>
-                            <td className="px-6 py-4 text-right">{q.invoiceCount}</td>
+                            <td className="px-6 py-4 font-medium text-gray-900">{q.quarter}</td>
+                            <td className="px-6 py-4 text-sm text-gray-700">{q.period}</td>
+                            <td className="px-6 py-4 text-right text-gray-800">{formatCurrency(q.revenue)}</td>
+                            <td className="px-6 py-4 text-right text-gray-800">{formatCurrency(q.tax)}</td>
+                            <td className="px-6 py-4 text-right font-semibold text-gray-900">{formatCurrency(q.netRevenue)}</td>
+                            <td className="px-6 py-4 text-right text-gray-800">{q.invoiceCount}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -438,26 +468,26 @@ function ReportsContent() {
                   {/* Monthly Accruals Table */}
                   {reportData.data.monthlyAccruals && reportData.data.monthlyAccruals.length > 0 && (
                     <div>
-                      <h3 className="text-lg font-semibold mb-4">Monthly Accrual Breakdown</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Accrual Breakdown</h3>
                       <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                           <thead className="bg-gray-50">
                             <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Month</th>
-                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Accrued Revenue</th>
-                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Accrued Tax</th>
-                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
-                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Entries</th>
+                              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Month</th>
+                              <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Accrued Revenue</th>
+                              <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Accrued Tax</th>
+                              <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Total</th>
+                              <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Entries</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200">
                             {reportData.data.monthlyAccruals.map((m: any) => (
                               <tr key={m.month} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 font-medium">{m.month}</td>
-                                <td className="px-6 py-4 text-right">{formatCurrency(m.amount)}</td>
-                                <td className="px-6 py-4 text-right">{formatCurrency(m.taxAmount)}</td>
-                                <td className="px-6 py-4 text-right font-semibold">{formatCurrency(m.amount + m.taxAmount)}</td>
-                                <td className="px-6 py-4 text-right">{m.count}</td>
+                                <td className="px-6 py-4 font-medium text-gray-900">{m.month}</td>
+                                <td className="px-6 py-4 text-right text-gray-800">{formatCurrency(m.amount)}</td>
+                                <td className="px-6 py-4 text-right text-gray-800">{formatCurrency(m.taxAmount)}</td>
+                                <td className="px-6 py-4 text-right font-semibold text-gray-900">{formatCurrency(m.amount + m.taxAmount)}</td>
+                                <td className="px-6 py-4 text-right text-gray-800">{m.count}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -469,26 +499,26 @@ function ReportsContent() {
                   {/* Product Breakdown */}
                   {reportData.data.byProduct && reportData.data.byProduct.length > 0 && (
                     <div>
-                      <h3 className="text-lg font-semibold mb-4">Accruals by Product</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Accruals by Product</h3>
                       <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                           <thead className="bg-gray-50">
                             <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Accrued Revenue</th>
-                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Accrued Tax</th>
-                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
-                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Entries</th>
+                              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Product</th>
+                              <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Accrued Revenue</th>
+                              <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Accrued Tax</th>
+                              <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Total</th>
+                              <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Entries</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200">
                             {reportData.data.byProduct.map((p: any) => (
                               <tr key={p.product} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 font-medium">{p.product || "N/A"}</td>
-                                <td className="px-6 py-4 text-right">{formatCurrency(p.amount)}</td>
-                                <td className="px-6 py-4 text-right">{formatCurrency(p.taxAmount)}</td>
-                                <td className="px-6 py-4 text-right font-semibold">{formatCurrency(p.amount + p.taxAmount)}</td>
-                                <td className="px-6 py-4 text-right">{p.count}</td>
+                                <td className="px-6 py-4 font-medium text-gray-900">{p.product || "N/A"}</td>
+                                <td className="px-6 py-4 text-right text-gray-800">{formatCurrency(p.amount)}</td>
+                                <td className="px-6 py-4 text-right text-gray-800">{formatCurrency(p.taxAmount)}</td>
+                                <td className="px-6 py-4 text-right font-semibold text-gray-900">{formatCurrency(p.amount + p.taxAmount)}</td>
+                                <td className="px-6 py-4 text-right text-gray-800">{p.count}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -499,8 +529,8 @@ function ReportsContent() {
 
                   {/* How Accrual Works */}
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-700 mb-2">How Accrual Works</h4>
-                    <p className="text-sm text-gray-600">
+                    <h4 className="font-semibold text-gray-900 mb-2">How Accrual Works</h4>
+                    <p className="text-sm text-gray-700">
                       When &quot;Calculations of Month&quot; is set (e.g., 3, 6, or 12 months), the total invoice amount is divided equally 
                       across those months. For example, a ₹1,20,000 annual membership with 12-month calculation will accrue 
                       ₹10,000 per month. This helps recognize revenue in the period it&apos;s earned, not when it&apos;s billed.

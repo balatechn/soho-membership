@@ -13,6 +13,7 @@ interface Invoice {
   name: string
   state: string | null
   product: string | null
+  membershipTotal: number
   cgst: number
   sgst: number
   igst: number
@@ -184,10 +185,12 @@ function InvoicesContent() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Global ID</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">State</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Before Tax</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">CGST</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">SGST</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">IGST</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Tax</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">After Tax</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -211,6 +214,9 @@ function InvoicesContent() {
                       {invoice.state || "-"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                      {formatCurrency(invoice.membershipTotal)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                       {formatCurrency(invoice.cgst)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
@@ -219,8 +225,11 @@ function InvoicesContent() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                       {formatCurrency(invoice.igst)}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                      {formatCurrency(invoice.totalTax)}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
-                      {formatCurrency(invoice.totalAmount)}
+                      {formatCurrency(invoice.membershipTotal + invoice.totalTax)}
                     </td>
                   </tr>
                 ))}
