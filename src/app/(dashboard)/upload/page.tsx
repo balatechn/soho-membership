@@ -52,6 +52,7 @@ export default function UploadPage() {
   const [loading, setLoading] = useState(false)
   const [deleteModal, setDeleteModal] = useState<{ show: boolean; upload: UploadLog | null }>({ show: false, upload: null })
   const [deleting, setDeleting] = useState(false)
+  const [errorModal, setErrorModal] = useState<{ show: boolean; upload: UploadLog | null }>({ show: false, upload: null })
 
   const isAdmin = session?.user?.role === "ADMIN"
 
@@ -138,6 +139,42 @@ export default function UploadPage() {
       default:
         return "bg-red-100 text-red-700"
     }
+  }
+
+  // Convert technical error messages to user-friendly language
+  const formatErrorMessage = (field: string, message: string) => {
+    // Field-specific friendly messages
+    const fieldMessages: Record<string, string> = {
+      "Invoice No": "Invoice number",
+      "Global ID": "Member ID (Global ID)",
+      "Invoice Date": "Invoice date",
+      "Month Total": "Total amount",
+    }
+
+    const friendlyField = fieldMessages[field] || field
+
+    // Message translations
+    if (message.includes("required")) {
+      return `The ${friendlyField} is missing. Please add this information.`
+    }
+    if (message.includes("already exists")) {
+      return `This invoice has already been uploaded before. Each invoice can only be uploaded once.`
+    }
+    if (message.includes("Duplicate")) {
+      return `This invoice appears more than once in your file. Please remove the duplicate.`
+    }
+    if (message.includes("Invalid") && field === "Invoice Date") {
+      return `The date format is not recognized. Please use DD/MM/YYYY format.`
+    }
+    if (message.includes("Invalid")) {
+      return `The ${friendlyField} format is incorrect. Please check and correct it.`
+    }
+    if (message.includes("not found")) {
+      return `The member with this ID was not found. They will be created automatically.`
+    }
+
+    // Default: return the original message
+    return message
   }
 
   return (
@@ -309,10 +346,13 @@ export default function UploadPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full ${getStatusColor(upload.status)}`}>
+                          <button
+                            onClick={() => upload.status === "COMPLETED_WITH_ERRORS" && upload.errors ? setErrorModal({ show: true, upload }) : null}
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full ${getStatusColor(upload.status)} ${upload.status === "COMPLETED_WITH_ERRORS" ? "cursor-pointer hover:opacity-80" : ""}`}
+                          >
                             {getStatusIcon(upload.status)}
                             {upload.status.replace(/_/g, " ")}
-                          </span>
+                          </button>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className="text-sm text-gray-800">
@@ -449,6 +489,88 @@ export default function UploadPage() {
                     Delete Upload
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Details Modal */}
+      {errorModal.show && errorModal.upload && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-100 rounded-lg">
+                  <AlertCircle className="w-6 h-6 text-amber-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Upload Issues</h2>
+                  <p className="text-sm text-gray-500">{errorModal.upload.fileName}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setErrorModal({ show: false, upload: null })}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              <div className="mb-4 p-4 bg-amber-50 rounded-lg">
+                <p className="text-sm text-amber-800">
+                  <strong>{errorModal.upload.successCount}</strong> out of <strong>{errorModal.upload.recordsCount}</strong> records were uploaded successfully. 
+                  The following records had issues and were skipped:
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {(() => {
+                  try {
+                    const errors = JSON.parse(errorModal.upload.errors || "[]")
+                    return errors.map((error: { row: number; field: string; message: string }, index: number) => (
+                      <div key={index} className="p-4 bg-red-50 border border-red-100 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <div className="p-1 bg-red-100 rounded">
+                            <XCircle className="w-4 h-4 text-red-600" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">Row {error.row}</p>
+                            <p className="text-sm text-gray-700 mt-1">
+                              {formatErrorMessage(error.field, error.message)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  } catch {
+                    return (
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-600">{errorModal.upload.errors}</p>
+                      </div>
+                    )
+                  }
+                })()}
+              </div>
+
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <h3 className="font-medium text-blue-900 mb-2">💡 How to fix these issues:</h3>
+                <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                  <li>Check that all required fields (Invoice No, Invoice Date, Global ID, Month Total) are filled</li>
+                  <li>Make sure dates are in a valid format (DD/MM/YYYY or Excel date format)</li>
+                  <li>Verify that invoice numbers are unique and not already in the system</li>
+                  <li>Ensure numeric fields (amounts, tax) contain only numbers</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 flex justify-end">
+              <button
+                onClick={() => setErrorModal({ show: false, upload: null })}
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800"
+              >
+                Close
               </button>
             </div>
           </div>
