@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react"
 import { useState, useEffect } from "react"
-import { Settings, Users, Bell, Plus, Edit2, Trash2, Eye, EyeOff, X, Check, RefreshCw } from "lucide-react"
+import { Settings, Users, Bell, Plus, Edit2, Trash2, Eye, EyeOff, X, Check, RefreshCw, Circle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import NotificationSettings from "@/components/notification-settings"
 
@@ -12,6 +12,15 @@ interface User {
   email: string
   role: string
   createdAt: string
+}
+
+interface OnlineUser {
+  id: string
+  name: string | null
+  email: string
+  role: string
+  isOnline: boolean
+  lastActiveAt: string | null
 }
 
 export default function SettingsPage() {
@@ -33,10 +42,19 @@ export default function SettingsPage() {
     role: "MANAGEMENT"
   })
   const [showPassword, setShowPassword] = useState(false)
+  
+  // Online users state
+  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([])
+  const [onlineCount, setOnlineCount] = useState(0)
+  const [loadingOnline, setLoadingOnline] = useState(true)
 
   useEffect(() => {
     if (status === "authenticated" && session?.user?.role === "ADMIN") {
       fetchUsers()
+      fetchOnlineUsers()
+      // Refresh online users every 30 seconds
+      const interval = setInterval(fetchOnlineUsers, 30000)
+      return () => clearInterval(interval)
     } else if (status === "authenticated" && session?.user?.role !== "ADMIN") {
       router.push("/dashboard")
     }
@@ -69,6 +87,38 @@ export default function SettingsPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const fetchOnlineUsers = async () => {
+    try {
+      setLoadingOnline(true)
+      const response = await fetch("/api/users/activity")
+      const data = await response.json()
+      if (data.users) {
+        setOnlineUsers(data.users)
+        setOnlineCount(data.onlineCount)
+      }
+    } catch (error) {
+      console.error("Failed to fetch online users:", error)
+    } finally {
+      setLoadingOnline(false)
+    }
+  }
+
+  const formatLastActive = (dateString: string | null) => {
+    if (!dateString) return "Never"
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    
+    if (diffMins < 1) return "Just now"
+    if (diffMins < 60) return `${diffMins} min ago`
+    
+    const diffHours = Math.floor(diffMins / 60)
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
+    
+    return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short" })
   }
 
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -337,6 +387,76 @@ export default function SettingsPage() {
             <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm font-medium rounded-full">MANAGEMENT</span>
           </div>
           <p className="text-gray-600 text-sm">Read-only access to dashboards, reports, and member information. Cannot upload or modify data.</p>
+        </div>
+      </div>
+
+      {/* Online Users Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Circle className="w-5 h-5 text-green-600 fill-green-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Online Users</h2>
+                <p className="text-sm text-gray-500">{onlineCount} user{onlineCount !== 1 ? 's' : ''} currently online</p>
+              </div>
+            </div>
+            <button
+              onClick={fetchOnlineUsers}
+              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+            >
+              <RefreshCw className={`w-4 h-4 ${loadingOnline ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6">
+          {loadingOnline && onlineUsers.length === 0 ? (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-600 mx-auto"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {onlineUsers.map((user) => (
+                <div
+                  key={user.id}
+                  className={`flex items-center gap-3 p-4 rounded-lg border ${
+                    user.isOnline 
+                      ? 'bg-green-50 border-green-200' 
+                      : 'bg-gray-50 border-gray-200'
+                  }`}
+                >
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                      <span className="text-amber-700 font-medium">
+                        {(user.name || user.email)[0].toUpperCase()}
+                      </span>
+                    </div>
+                    <span
+                      className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                        user.isOnline ? 'bg-green-500' : 'bg-gray-400'
+                      }`}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 truncate">
+                      {user.name || user.email.split('@')[0]}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${getRoleBadgeColor(user.role)}`}>
+                        {user.role}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {user.isOnline ? 'Online' : formatLastActive(user.lastActiveAt)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

@@ -19,6 +19,8 @@ model User {
   password      String
   role          String    @default("MANAGEMENT") // ADMIN, FINANCE, MANAGEMENT
   image         String?
+  lastActiveAt  DateTime?
+  isOnline      Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
