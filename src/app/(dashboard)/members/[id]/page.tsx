@@ -10,6 +10,7 @@ interface Invoice {
   id: string
   invoiceNo: string
   invoiceDate: string
+  membershipTotal: number
   totalAmount: number
   totalTax: number
   product: string | null
@@ -82,7 +83,9 @@ export default function MemberDetailPage() {
     return null
   }
 
-  const totalRevenue = member.invoices.reduce((sum, inv) => sum + inv.totalAmount, 0)
+  const totalTaxSum = member.invoices.reduce((sum, inv) => sum + inv.totalTax, 0)
+  const totalAmountSum = member.invoices.reduce((sum, inv) => sum + inv.membershipTotal, 0)
+  const totalRevenue = totalTaxSum + totalAmountSum
 
   return (
     <div className="space-y-6">
@@ -187,8 +190,9 @@ export default function MemberDetailPage() {
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice No</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Before Tax</th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Tax</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">After Tax</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -197,14 +201,17 @@ export default function MemberDetailPage() {
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">{invoice.invoiceNo}</td>
                         <td className="px-4 py-3 text-sm text-gray-500">{formatDate(invoice.invoiceDate)}</td>
                         <td className="px-4 py-3 text-sm text-gray-500">{invoice.product || "-"}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500 text-right">{formatCurrency(invoice.membershipTotal)}</td>
                         <td className="px-4 py-3 text-sm text-gray-500 text-right">{formatCurrency(invoice.totalTax)}</td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900 text-right">{formatCurrency(invoice.totalAmount)}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900 text-right">{formatCurrency(invoice.membershipTotal + invoice.totalTax)}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
                     <tr className="bg-gray-50">
-                      <td colSpan={4} className="px-4 py-3 text-sm font-medium text-gray-900">Total</td>
+                      <td colSpan={3} className="px-4 py-3 text-sm font-medium text-gray-900">Total</td>
+                      <td className="px-4 py-3 text-sm font-bold text-gray-500 text-right">{formatCurrency(totalAmountSum)}</td>
+                      <td className="px-4 py-3 text-sm font-bold text-gray-500 text-right">{formatCurrency(totalTaxSum)}</td>
                       <td className="px-4 py-3 text-sm font-bold text-gray-900 text-right">{formatCurrency(totalRevenue)}</td>
                     </tr>
                   </tfoot>
